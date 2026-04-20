@@ -11,3 +11,6 @@ coverage/
 *.log
 .vscode/
 .idea/
+
+# Prisma
+prisma/migrations/dev.db*
