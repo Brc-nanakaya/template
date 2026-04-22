@@ -147,19 +147,20 @@
 
 ---
 
-### [ ] T08: 異常値アラートバナー
-**ステータス**: 未着手  
+### [x] T08: 異常値アラートバナー
+**ステータス**: 完了  
 **依存**: T05, T07  
 **作業内容**:
-- `components/dashboard/AnomalyAlert.tsx` 実装
-- detectAnomaliesの上位3件をカード表示
-- 重要度で色分け（high=赤、medium=黄、low=灰）
-- クリックで該当セクションにスクロール
-- data-testid: `dashboard-anomaly-banner`, `dashboard-anomaly-item-[index]`（data-severity属性）
+- `components/dashboard/AnomalyAlert.tsx` 実装（`detectAnomalies` 結果を重要度降順のまま受け取り、上位 3 件をカード表示、0 件時はプレースホルダー）
+- 重要度色分け（high=赤 `#B91C1C`・medium=黄 `#D97706`・low=灰 `#94A3B8`）— 左ボーダー色・バッジ背景・ドット色を連動
+- クリックで `a.sectionAnchor` の id 要素に `scrollIntoView({ behavior: "smooth" })` と `data-scroll-target` 属性の一時付与
+- `app/dashboard/page.tsx` に `delinquency-section` / `default-section` / `trigger-section` / `prepayment-section` / `waterfall-section` / `servicer-section` の先行アンカーを配置（T09-T13 で中身を埋める）
+- dashboard ページから `detectAnomalies` を呼び出し（`previousServicerRating: "AA-"` で格付変動も誘発）、バナーを KPI カードの直前に配置
+- data-testid: `dashboard-anomaly-banner`（`data-count` 属性）、`dashboard-anomaly-item-[index]`（`data-severity` 属性、`data-anchor` 属性）
 
 **完了条件**:
-- [ ] サンプルデータで最低1件のhighアラートが表示
-- [ ] 色分けが視覚的に確認できる
+- [x] サンプルデータで最低1件のhighアラートが表示（E2E で `dashboard-anomaly-item-0` の `data-severity="high"` を検証、3 ブラウザ 3/3）
+- [x] 色分けが視覚的に確認できる（`getComputedStyle(...).borderLeftColor` = `rgb(185, 28, 28)` を E2E で検証）
 
 ---
 
@@ -398,10 +399,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 2/9 |
+| UI実装 | T06-T14 | 3/9 |
 | レポート・仕上げ | T15-T18 | 0/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **7/23** |
+| **合計** | **T01-T23** | **8/23** |
 
 ---
 

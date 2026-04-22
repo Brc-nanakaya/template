@@ -3,13 +3,20 @@
 import { useEffect, useState } from "react";
 import { loadAllSampleData } from "@/lib/loaders";
 import { calculateMonthlyMetrics, type MonthlyMetrics } from "@/lib/metrics";
-import type { TrustDataset } from "@/lib/types";
+import { detectAnomalies } from "@/lib/anomaly";
+import type { Anomaly, TrustDataset } from "@/lib/types";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { SummaryKpiCards } from "@/components/dashboard/SummaryKpiCards";
+import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
 
 type LoadState =
   | { kind: "loading" }
-  | { kind: "ready"; dataset: TrustDataset; metrics: MonthlyMetrics }
+  | {
+      kind: "ready";
+      dataset: TrustDataset;
+      metrics: MonthlyMetrics;
+      anomalies: Anomaly[];
+    }
   | { kind: "error"; message: string };
 
 export default function DashboardPage() {
@@ -23,7 +30,15 @@ export default function DashboardPage() {
         const metrics = calculateMonthlyMetrics(dataset.monthly, {
           initialPoolMm: dataset.deal.initial_pool_balance_mm,
         });
-        if (!cancelled) setState({ kind: "ready", dataset, metrics });
+        const anomalies = detectAnomalies({
+          monthly: dataset.monthly,
+          defaults: dataset.defaults,
+          triggers: dataset.triggers,
+          deal: dataset.deal,
+          waterfall: dataset.waterfall,
+          previousServicerRating: "AA-",
+        });
+        if (!cancelled) setState({ kind: "ready", dataset, metrics, anomalies });
       } catch (e) {
         if (!cancelled) {
           setState({
@@ -73,17 +88,26 @@ export default function DashboardPage() {
     );
   }
 
-  const { dataset, metrics } = state;
+  const { dataset, metrics, anomalies } = state;
 
   return (
     <main className="min-h-screen bg-trust-bg p-4 sm:p-6" data-testid="dashboard-main">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <DashboardHeader deal={dataset.deal} />
+        <AnomalyAlert anomalies={anomalies} />
         <SummaryKpiCards
           deal={dataset.deal}
           monthly={dataset.monthly}
           metrics={metrics}
         />
+        {/* 以降のセクションは T09-T13 で実装。
+            T08 のアラートクリックで利用するアンカーを先行して配置しておく。 */}
+        <div id="delinquency-section" className="scroll-mt-8" aria-hidden />
+        <div id="default-section" className="scroll-mt-8" aria-hidden />
+        <div id="trigger-section" className="scroll-mt-8" aria-hidden />
+        <div id="prepayment-section" className="scroll-mt-8" aria-hidden />
+        <div id="waterfall-section" className="scroll-mt-8" aria-hidden />
+        <div id="servicer-section" className="scroll-mt-8" aria-hidden />
       </div>
     </main>
   );

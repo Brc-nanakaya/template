@@ -20,6 +20,25 @@ test("sample-data CTA navigates to /dashboard", async ({ page }) => {
   await expect(page.getByTestId("dashboard-main")).toBeVisible();
 });
 
+test("dashboard anomaly banner shows at least one high severity alert with color coding", async ({
+  page,
+}) => {
+  await page.goto("/dashboard");
+  const banner = page.getByTestId("dashboard-anomaly-banner");
+  await expect(banner).toBeVisible();
+  const firstItem = page.getByTestId("dashboard-anomaly-item-0");
+  await expect(firstItem).toBeVisible();
+  // Top alert must be high (anomalies are sorted high→low)
+  await expect(firstItem).toHaveAttribute("data-severity", "high");
+
+  // Color coding differs per severity: high uses border-trust-danger (#B91C1C)
+  const borderColor = await firstItem.evaluate(
+    (el) => window.getComputedStyle(el).borderLeftColor,
+  );
+  // tailwind trust-danger = #B91C1C → rgb(185, 28, 28)
+  expect(borderColor).toBe("rgb(185, 28, 28)");
+});
+
 test("dashboard shows header and 6 KPI cards with anchored values", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page.getByTestId("dashboard-header")).toBeVisible();
