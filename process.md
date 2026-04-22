@@ -262,21 +262,32 @@
 
 ---
 
-### [ ] T14: AI所見APIルート＋UIセクション
-**ステータス**: 未着手  
+### [x] T14: AI所見APIルート＋UIセクション
+**ステータス**: 完了  
 **依存**: T05, T07  
 **作業内容**:
-- `app/api/generate-commentary/route.ts`: POSTで monthlyHistory, currentMonth, anomalies, portfolioStats, triggerStatus, dealInfo を受け取り、claude-sonnet-4-5 を呼び出し
-- システムプロンプト: 信託銀行の期中管理担当者ペルソナ、4セクション（当月サマリー/延滞デフォルト/トリガー/翌月留意事項）、各2-4文
-- `NEXT_PUBLIC_MOCK_LLM=true` 時は固定モックレスポンスを返す分岐
-- エラー時のフォールバックテンプレート
-- UIセクション: 生成ボタン、CommentaryEditor（編集可能textarea）、再生成ボタン、レポート反映ボタン
-- data-testid: `dashboard-btn-generate-commentary`, `dashboard-commentary-editor`, `dashboard-btn-regenerate`, `dashboard-btn-apply-commentary`
+- `app/api/generate-commentary/route.ts`: POST で `dealInfo`, `currentMonth`, `monthlyHistory`, `anomalies`,
+  `triggerStatus` を受け取り、3 段階で応答を返す:
+  1. `NEXT_PUBLIC_MOCK_LLM=true` → 固定モック（決定論的、E2E 向け）
+  2. `OPENAI_API_KEY` 設定 → `openai` SDK 経由で `gpt-4o-mini` を呼び出し（モデルは `OPENAI_MODEL` で上書き可）
+  3. 上記いずれでもない / 呼び出しエラー → フォールバックテンプレート
+- システムプロンプト: 信託事業推進部の期中管理担当ペルソナ、4 セクション固定（当月サマリー / 延滞デフォルト / トリガー / 翌月留意事項）、
+  各 2〜4 文、数値は 3 桁区切り + 億円併記、信託業界用語を正確に使用。
+- `components/dashboard/CommentaryEditor.tsx`: 生成ボタン / 再生成ボタン / レポート反映ボタン、
+  編集可能 textarea、生成モードの状態表示（`dashboard-commentary-status`）。
+  「レポート反映」押下で `sessionStorage.trust:commentary` に保存 → `/report` へ遷移。
+- `app/report/page.tsx` を Client Component 化し、`trust:commentary` があれば `buildReport` に差し込み、
+  なければプレースホルダ所見を使用。情報源は `report-commentary-source` で表示。
+- `.env.local.example` に `OPENAI_API_KEY` / `OPENAI_MODEL` を追記（`ANTHROPIC_API_KEY` は互換のため残置）。
+- ユニットテスト `tests/unit/generate-commentary-route.test.ts`（4 ケース）: モック/フォールバック経路、
+  無効 JSON の 400、モック応答 5 秒以内。
+- data-testid: `dashboard-commentary-section`, `dashboard-btn-generate-commentary`, `dashboard-commentary-editor`,
+  `dashboard-btn-regenerate`, `dashboard-btn-apply-commentary`, `dashboard-commentary-status`, `report-commentary-source`。
 
 **完了条件**:
-- [ ] モックモードで生成ボタン押下後、5秒以内に所見文が表示
-- [ ] 4セクション（当月サマリー/延滞/トリガー/翌月）が含まれる
-- [ ] テキストエリアで編集可能
+- [x] モックモードで生成ボタン押下後、5秒以内に所見文が表示（ユニットテスト `mock response completes quickly (<5s)`）
+- [x] 4セクション（当月サマリー/延滞/トリガー/翌月）が含まれる（ユニットテスト `returns mock commentary` / `falls back to template` で各4 ヘッダーを検証）
+- [x] テキストエリアで編集可能（`dashboard-commentary-editor` は制御された textarea、入力が state に反映される）
 
 ---
 
@@ -434,10 +445,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 8/9 |
+| UI実装 | T06-T14 | 9/9 |
 | レポート・仕上げ | T15-T18 | 2/4 |
 | E2E | T19-T23 | 1/5 |
-| **合計** | **T01-T23** | **16/23** |
+| **合計** | **T01-T23** | **17/23** |
 
 ---
 

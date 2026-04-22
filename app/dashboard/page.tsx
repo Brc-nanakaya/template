@@ -14,6 +14,7 @@ import { PrepaymentDefaultAnalysis } from "@/components/dashboard/PrepaymentDefa
 import { WaterfallTable } from "@/components/dashboard/WaterfallTable";
 import { TriggerStatusTable } from "@/components/dashboard/TriggerStatusTable";
 import { LoanTapeTable } from "@/components/dashboard/LoanTapeTable";
+import { CommentaryEditor } from "@/components/dashboard/CommentaryEditor";
 
 type LoadState =
   | { kind: "loading" }
@@ -137,6 +138,13 @@ export default function DashboardPage() {
         <div id="servicer-section" className="scroll-mt-8">
           <LoanTapeTable loans={dataset.loans} />
         </div>
+        <CommentaryEditor
+          dealInfo={dataset.deal}
+          currentMonth={dataset.monthly[dataset.monthly.length - 1]}
+          monthlyHistory={dataset.monthly}
+          anomalies={anomalies}
+          triggerStatus={dataset.triggers}
+        />
       </div>
     </main>
   );
