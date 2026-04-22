@@ -70,22 +70,22 @@
 
 ---
 
-### [ ] T04: KPI計算ロジック＋ユニットテスト
-**ステータス**: 未着手  
+### [x] T04: KPI計算ロジック＋ユニットテスト
+**ステータス**: 完了  
 **依存**: T03  
 **作業内容**:
 - `lib/metrics.ts` に以下を実装:
-  - `calculateMonthlyMetrics`（CPR年率、CDR年率、延滞率、残存率、前月比等）
-  - `calculatePortfolioStats`（加重平均金利、金利タイプ構成、物件種別構成、年齢分布等）
-  - `aggregatePrepaymentsByReason`
-  - `aggregateDefaultsByCause`, `aggregateDefaultsByDisposalStatus`
-  - `predictTriggerBreach`（線形予測）
+  - `calculateMonthlyMetrics`（CPR年率、CDR年率、延滞率合計、残存率、前月比差・前月比率・延滞率pp変化）
+  - `calculatePortfolioStats`（加重平均金利/LTV/DTI/残存期間、金利タイプ/物件種別の構成、5歳刻み年齢分布、active_loan_count）
+  - `aggregatePrepaymentsByReason`（金額降順ソート）
+  - `aggregateDefaultsByCause`, `aggregateDefaultsByDisposalStatus`（回収・損失を別集計）
+  - `predictTriggerBreach`（6ヶ月線形回帰、方向性考慮、到達月を `YYYY-MM` で返却）
 
 **完了条件**:
-- [ ] `tests/unit/metrics.test.ts` で各関数2-3ケース
-- [ ] 加重平均計算の正確性を検証
-- [ ] ゼロ除算・空配列のエッジケースを処理
-- [ ] `npm test` 全グリーン
+- [x] `tests/unit/metrics.test.ts` 計14ケース（各関数2-4ケース）
+- [x] 加重平均計算の正確性を検証（残高×利率の手計算と一致）
+- [x] ゼロ除算・空配列のエッジケース処理（空ローン、単月、既抵触、方向違いで null 返却）
+- [x] `npm test` 全グリーン（33/33）
 
 ---
 
@@ -393,11 +393,11 @@
 
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
-| 基盤 | T01-T05 | 3/5 |
+| 基盤 | T01-T05 | 4/5 |
 | UI実装 | T06-T14 | 0/9 |
 | レポート・仕上げ | T15-T18 | 0/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **3/23** |
+| **合計** | **T01-T23** | **4/23** |
 
 ---
 
