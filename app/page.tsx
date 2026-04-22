@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toastError } from "@/lib/toast";
 
 type UploadStatus =
   | { kind: "idle" }
@@ -46,7 +47,11 @@ export default function HomePage() {
   }, [router]);
 
   const handleFiles = useCallback((files: FileList | File[]) => {
-    setStatus(validate(files));
+    const next = validate(files);
+    setStatus(next);
+    if (next.kind === "error") {
+      toastError("対応していない形式です", next.message);
+    }
   }, []);
 
   const handleGoUpload = useCallback(() => {

@@ -15,6 +15,7 @@ import { WaterfallTable } from "@/components/dashboard/WaterfallTable";
 import { TriggerStatusTable } from "@/components/dashboard/TriggerStatusTable";
 import { LoanTapeTable } from "@/components/dashboard/LoanTapeTable";
 import { CommentaryEditor } from "@/components/dashboard/CommentaryEditor";
+import { toastError } from "@/lib/toast";
 
 type LoadState =
   | { kind: "loading" }
@@ -48,10 +49,9 @@ export default function DashboardPage() {
         if (!cancelled) setState({ kind: "ready", dataset, metrics, anomalies });
       } catch (e) {
         if (!cancelled) {
-          setState({
-            kind: "error",
-            message: e instanceof Error ? e.message : String(e),
-          });
+          const message = e instanceof Error ? e.message : String(e);
+          setState({ kind: "error", message });
+          toastError("データ読み込みに失敗しました", message);
         }
       }
     })();

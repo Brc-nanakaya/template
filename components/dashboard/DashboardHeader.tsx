@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { DealInfo } from "@/lib/types";
 import { fmtMonth } from "@/lib/formatters";
+import { toastSuccess } from "@/lib/toast";
 
 export interface DashboardHeaderProps {
   deal: DealInfo;
@@ -14,7 +15,9 @@ export function DashboardHeader({ deal }: DashboardHeaderProps) {
   const handleReset = () => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("trust-data-source");
+      sessionStorage.removeItem("trust:commentary");
     }
+    toastSuccess("デモをリセットしました", "トップページへ戻ります。");
     router.push("/");
   };
 

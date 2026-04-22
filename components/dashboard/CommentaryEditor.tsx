@@ -20,6 +20,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Anomaly, DealInfo, MonthlyPerformance, TriggerTest } from "@/lib/types";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 export interface CommentaryEditorProps {
   dealInfo: DealInfo;
@@ -73,7 +74,9 @@ export function CommentaryEditor({
       setCommentary(data.commentary);
       setMode(data.mode);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toastError("AI 所見の生成に失敗しました", message);
     } finally {
       setLoading(false);
     }
@@ -83,6 +86,7 @@ export function CommentaryEditor({
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("trust:commentary", commentary);
     }
+    toastSuccess("所見をレポートに反映しました", "プレビュー画面に遷移します。");
     router.push("/report");
   };
 

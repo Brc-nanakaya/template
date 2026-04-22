@@ -334,20 +334,31 @@
 
 ---
 
-### [ ] T17: 仕上げ（リセット/スケルトン/エラーハンドリング）
-**ステータス**: 未着手  
+### [x] T17: 仕上げ（リセット/スケルトン/エラーハンドリング）
+**ステータス**: 完了  
 **依存**: T16  
 **作業内容**:
-- 「デモをリセット」ボタン機能
-- ローディング時のSkeleton UI
-- エラーハンドリング（sonnerトースト）: ファイル形式エラー、API失敗、データ不整合
-- data-testid: `dashboard-btn-reset`, `dashboard-skeleton`, `toast-error`, `toast-success`
-- レスポンシブ調整（タブレット・デスクトップ）
+- **デモリセット**: T07 時点で `DashboardHeader` に `dashboard-btn-reset` を実装済。T17 で
+  sessionStorage から `trust-data-source` + `trust:commentary` を削除し、`toastSuccess`
+  「デモをリセットしました」→ `/` 遷移の導線を追加。
+- **スケルトン UI**: T07 時点で `dashboard-skeleton`（ヘッダー + 6 KPI カード相当）を実装済。
+  `/report` 側も Client 化に伴い同等のプレースホルダスケルトンを追加（`report-loading`）。
+- **エラーハンドリング（sonner トースト）**: `lib/toast.tsx` を新設し `toast.custom` で
+  `data-testid="toast-error"` / `data-testid="toast-success"` を固定化。
+  次の経路に連携:
+  - ホームのファイル拡張子バリデーション失敗 → `toastError("対応していない形式です", ...)`
+  - ダッシュボードの `loadAllSampleData` 失敗 → `toastError("データ読み込みに失敗しました", ...)`
+  - `CommentaryEditor` の API 失敗 → `toastError("AI 所見の生成に失敗しました", ...)`
+  - 所見をレポートに反映 → `toastSuccess("所見をレポートに反映しました", ...)`
+- `<Toaster position="top-right" closeButton />` を `app/layout.tsx` に配置。
+- レスポンシブ: 既存ダッシュボードの `grid-cols-1 / sm:grid-cols-2 / xl:grid-cols-3` 構造と
+  新設コンポーネント（WaterfallTable / TriggerStatusTable / LoanTapeTable / CommentaryEditor）
+  にも flex-wrap・overflow-x-auto を適用済。
 
 **完了条件**:
-- [ ] リセットボタンで初期状態に戻る
-- [ ] 不正CSVアップロード時にエラートースト表示
-- [ ] データロード中にスケルトン表示
+- [x] リセットボタンで初期状態に戻る（`dashboard-btn-reset` で sessionStorage クリア + トップページ遷移 + `toast-success` 表示）
+- [x] 不正CSVアップロード時にエラートースト表示（ホームの `handleFiles` が `validate` で拒否 → `toastError` で `data-testid="toast-error"` を描画）
+- [x] データロード中にスケルトン表示（ダッシュボードは `dashboard-skeleton`、レポートは `report-loading`）
 
 ---
 
@@ -446,9 +457,9 @@
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
 | UI実装 | T06-T14 | 9/9 |
-| レポート・仕上げ | T15-T18 | 2/4 |
+| レポート・仕上げ | T15-T18 | 3/4 |
 | E2E | T19-T23 | 1/5 |
-| **合計** | **T01-T23** | **17/23** |
+| **合計** | **T01-T23** | **18/23** |
 
 ---
 
