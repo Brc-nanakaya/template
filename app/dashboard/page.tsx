@@ -10,6 +10,7 @@ import { SummaryKpiCards } from "@/components/dashboard/SummaryKpiCards";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
 import { TrendCharts } from "@/components/dashboard/TrendCharts";
 import { PortfolioBreakdown } from "@/components/dashboard/PortfolioBreakdown";
+import { PrepaymentDefaultAnalysis } from "@/components/dashboard/PrepaymentDefaultAnalysis";
 
 type LoadState =
   | { kind: "loading" }
@@ -108,10 +109,17 @@ export default function DashboardPage() {
         <section aria-label="ポートフォリオ構成" className="scroll-mt-8">
           <PortfolioBreakdown loans={dataset.loans} regional={dataset.regional} />
         </section>
-        {/* T11-T13 の実装時に埋めるアンカー（T08 のスクロール先）。 */}
-        <div id="default-section" className="scroll-mt-8" aria-hidden />
+        <div id="prepayment-section" className="scroll-mt-8">
+          <div id="default-section">
+            <PrepaymentDefaultAnalysis
+              prepayments={dataset.prepayments}
+              defaults={dataset.defaults}
+              reportMonth={dataset.deal.report_month}
+            />
+          </div>
+        </div>
+        {/* T12-T13 の実装時に埋めるアンカー（T08 のスクロール先）。 */}
         <div id="trigger-section" className="scroll-mt-8" aria-hidden />
-        <div id="prepayment-section" className="scroll-mt-8" aria-hidden />
         <div id="waterfall-section" className="scroll-mt-8" aria-hidden />
         <div id="servicer-section" className="scroll-mt-8" aria-hidden />
       </div>

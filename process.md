@@ -202,18 +202,22 @@
 
 ---
 
-### [ ] T11: 期限前弁済・デフォルト分析
-**ステータス**: 進行中  
+### [x] T11: 期限前弁済・デフォルト分析
+**ステータス**: 完了  
 **依存**: T07  
 **作業内容**:
-- 期限前弁済の理由別構成（過去12ヶ月、ドーナツ＋月次推移）
-- デフォルト事由別内訳（ドーナツ）
-- デフォルト回収進捗（担保処分状況別の件数・金額）
-- data-testid: `dashboard-prepayment-breakdown`, `dashboard-default-cause`, `dashboard-default-disposal`
+- `components/dashboard/PrepaymentDefaultAnalysis.tsx` を新規作成（4カード構成、`lg:grid-cols-2`）
+- 期限前弁済 理由別構成（直近12ヶ月）: `aggregatePrepaymentsByReason` で集計しドーナツPie、凡例に share% を付与、最大シェア(`借換`)をサブタイトルに表示
+- 期限前弁済 月次推移（理由別）: 報告基準月から遡る12ヶ月の YYYY-MM を軸に、reason別 月次金額を LineChart（借換=#0B2545, 売却=#D4A017, 自己資金=#1E4A7B, 相続=#64748B, その他=#94A3B8）
+- デフォルト 事由別内訳: `aggregateDefaultsByCause` でドーナツPie（リストラ等収入減/病気・事故/離婚/事業不振/死亡/その他の専用色パレット）
+- デフォルト 回収進捗（担保処分状況別）: `aggregateDefaultsByDisposalStatus` で回収額(ネイビー)・損失額(#B91C1C)の stackedBar + 件数(#D4A017)の右軸 Bar、二軸表示
+- `app/dashboard/page.tsx` に `<PrepaymentDefaultAnalysis ... />` を追加、`#prepayment-section`/`#default-section` アンカー内に配置（T08 スクロール対象と整合）
+- data-testid: `dashboard-prepayment-default-grid`, `dashboard-prepayment-breakdown`, `dashboard-prepayment-monthly-trend`, `dashboard-default-cause`, `dashboard-default-disposal`
+- E2E テスト追加: 3ビジュアルの可視性と `借換` 最大シェア表示を検証（3ブラウザ 3/3 グリーン）
 
 **完了条件**:
-- [ ] 3つのビジュアル全て表示
-- [ ] 借換が期限前弁済理由の最大シェア
+- [x] 3つのビジュアル全て表示（E2E `prepayment/default analysis shows 3 visuals` で breakdown/cause/disposal 3カード × SVG の可視性を検証）
+- [x] 借換が期限前弁済理由の最大シェア（E2E でサブタイトルに「最大シェア: 借換」が含まれることを検証、決定論サンプルデータで保証）
 
 ---
 
@@ -419,10 +423,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 5/9 |
+| UI実装 | T06-T14 | 6/9 |
 | レポート・仕上げ | T15-T18 | 2/4 |
 | E2E | T19-T23 | 1/5 |
-| **合計** | **T01-T23** | **13/23** |
+| **合計** | **T01-T23** | **14/23** |
 
 ---
 

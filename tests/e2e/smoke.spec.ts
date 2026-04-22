@@ -124,3 +124,25 @@ test("dashboard portfolio breakdown shows 4 charts and 東京都 is the top pref
   const firstYTick = prefCard.locator(".recharts-yAxis .recharts-cartesian-axis-tick").first();
   await expect(firstYTick).toHaveText("東京都");
 });
+
+test("prepayment/default analysis shows 3 visuals and 借換 leads prepayment reasons", async ({
+  page,
+}) => {
+  await page.goto("/dashboard");
+  await expect(page.getByTestId("dashboard-prepayment-default-grid")).toBeVisible();
+
+  for (const id of [
+    "dashboard-prepayment-breakdown",
+    "dashboard-default-cause",
+    "dashboard-default-disposal",
+  ]) {
+    const card = page.getByTestId(id);
+    await expect(card).toBeVisible();
+    await expect(card.locator("svg").first()).toBeVisible();
+  }
+
+  // 借換 must be the top-share prepayment reason — subtitle surfaces it as the max
+  await expect(page.getByTestId("dashboard-prepayment-breakdown")).toContainText(
+    "最大シェア: 借換",
+  );
+});
