@@ -169,10 +169,10 @@ const DEAL = {
   senior_initial_balance_mm: 108_000,
   subordinated_initial_balance_mm: 12_000,
   trigger_thresholds: {
-    cumulative_default_rate: 0.03,
-    delinquency_90_rate: 0.015,
-    cpr_annual: 0.25,
-    subordination_ratio_min: 0.07,
+    cumulative_default_rate: 0.011,
+    delinquency_90_rate: 0.008,
+    cpr_annual: 0.18,
+    subordination_ratio_min: 0.09,
   },
   waterfall_priority: [
     "信託報酬・諸費用",
@@ -211,8 +211,9 @@ for (let i = 0; i < 24; i++) {
   cumPrepayCount += prepayCount;
 
   // Scheduled amortization: residual to hit target pool
+  // 当月（i=23）は Rule 2 (default surge) を発火させるため意図的に件数を底上げ
   const defaultMm = Math.round(prevPool * between(0.0002, 0.0005) * 100) / 100;
-  const defaultCount = intBetween(3, 7);
+  const defaultCount = i === 23 ? 11 : intBetween(3, 7);
   cumDefaultMm += defaultMm;
   cumDefaultCount += defaultCount;
 
@@ -221,7 +222,10 @@ for (let i = 0; i < 24; i++) {
   // Delinquency rates — rising slightly over time, then stabilizing
   const del30 = between(0.008, 0.013);
   const del60 = between(0.003, 0.006);
-  const del90 = between(0.0048, 0.0068); // target ~0.5-0.7%
+  // 90日以上延滞率: 最終4ヶ月（i=20..23）を単調増加させ、Rule 1（3ヶ月連続上昇）と
+  //   Rule 3（閾値 0.008 の70%超）を発火させる。KPI 表示レンジ 0.5-0.7% も満たす。
+  const del90Ramp: Record<number, number> = { 20: 0.0056, 21: 0.006, 22: 0.0063, 23: 0.0068 };
+  const del90 = del90Ramp[i] ?? between(0.0045, 0.0056);
 
   const cpr_annual = 1 - Math.pow(1 - cpr_monthly, 12);
   const cdr_annual = 1 - Math.pow(1 - defaultMm / prevPool, 12);
