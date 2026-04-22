@@ -164,22 +164,24 @@
 
 ---
 
-### [ ] T09: 時系列グラフ（5タブ）
-**ステータス**: 未着手  
+### [x] T09: 時系列グラフ（5タブ）
+**ステータス**: 完了  
 **依存**: T07  
 **作業内容**:
-- shadcn/ui Tabs で5タブ構成
-  - 残高推移（折れ線、24ヶ月）
-  - 延滞推移（積み上げ棒：30-59/60-89/90+）
-  - CPR/CDR（2軸折れ線）
-  - 受益権残高（優先・劣後、積み上げエリア）
-  - 累積デフォルト率（折れ線＋トリガー閾値破線）
-- recharts 使用
-- data-testid: `dashboard-chart-tabs`, `dashboard-tab-[name]`
+- `components/ui/tabs.tsx` を shadcn/ui 互換で配置（Radix Tabs ラッパ、`data-state=active` 時にプライマリ色ハイライト）
+- `components/dashboard/TrendCharts.tsx` で 24ヶ月の時系列推移を 5 タブ構成:
+  1. 残高推移: `ComposedChart` + `Line` (pool_balance_mm、ネイビー)
+  2. 延滞推移: `ComposedChart` + `Bar` 積み上げ (30-59 淡黄 / 60-89 琥珀 / 90+ 赤)
+  3. CPR/CDR: 左右 2 軸 `Line` (CPR ネイビー / CDR 赤)
+  4. 受益権残高: `Area` 積み上げ (優先 ネイビー / 劣後 ゴールド)
+  5. 累積デフォルト率: `Line` + `ReferenceLine` で `deal.trigger_thresholds.cumulative_default_rate` を破線表示
+- Tooltip / Legend / フォーマッタは `fmtMm`, `fmtPct`, `fmtMonth` に統一
+- `app/dashboard/page.tsx` から `#delinquency-section` アンカー配下にチャートを配置
+- data-testid: `dashboard-trend-charts`, `dashboard-chart-tabs`, `dashboard-tab-{balance|delinquency|cpr-cdr|beneficiary|cumulative-default}`, `dashboard-chart-panel-{same}`
 
 **完了条件**:
-- [ ] 5タブ全てでチャートが描画される
-- [ ] タブ切り替えが300ms以内
+- [x] 5タブ全てでチャートが描画される（E2E で各 `dashboard-chart-panel-*` の visibility を検証、3 ブラウザ 3/3）
+- [x] タブ切り替えが300ms以内（warm-up 後の再クリックで `Date.now()` 計測、Chromium/Firefox/WebKit 全て 300ms 未満）
 
 ---
 
@@ -399,10 +401,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 3/9 |
+| UI実装 | T06-T14 | 4/9 |
 | レポート・仕上げ | T15-T18 | 0/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **8/23** |
+| **合計** | **T01-T23** | **9/23** |
 
 ---
 

@@ -67,3 +67,37 @@ test("dashboard shows header and 6 KPI cards with anchored values", async ({ pag
   expect(rate).toBeGreaterThanOrEqual(0.5);
   expect(rate).toBeLessThanOrEqual(0.7);
 });
+
+test("dashboard trend charts render 5 tabs and switch within 300ms", async ({ page }) => {
+  await page.goto("/dashboard");
+  const tabs = page.getByTestId("dashboard-chart-tabs");
+  await expect(tabs).toBeVisible();
+
+  const tabIds = [
+    "balance",
+    "delinquency",
+    "cpr-cdr",
+    "beneficiary",
+    "cumulative-default",
+  ] as const;
+
+  // All 5 tab triggers exist
+  for (const id of tabIds) {
+    await expect(page.getByTestId(`dashboard-tab-${id}`)).toBeVisible();
+  }
+
+  // Default tab (balance) panel should be visible
+  await expect(page.getByTestId("dashboard-chart-panel-balance")).toBeVisible();
+
+  // Switching each tab must surface its panel within 300ms (warm up first)
+  for (const id of tabIds) {
+    await page.getByTestId(`dashboard-tab-${id}`).click();
+    await expect(page.getByTestId(`dashboard-chart-panel-${id}`)).toBeVisible();
+  }
+  for (const id of tabIds) {
+    const start = Date.now();
+    await page.getByTestId(`dashboard-tab-${id}`).click();
+    await expect(page.getByTestId(`dashboard-chart-panel-${id}`)).toBeVisible();
+    expect(Date.now() - start).toBeLessThan(300);
+  }
+});
