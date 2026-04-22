@@ -9,6 +9,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { SummaryKpiCards } from "@/components/dashboard/SummaryKpiCards";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
 import { TrendCharts } from "@/components/dashboard/TrendCharts";
+import { PortfolioBreakdown } from "@/components/dashboard/PortfolioBreakdown";
 
 type LoadState =
   | { kind: "loading" }
@@ -104,7 +105,10 @@ export default function DashboardPage() {
         <div id="delinquency-section" className="scroll-mt-8">
           <TrendCharts deal={dataset.deal} monthly={dataset.monthly} />
         </div>
-        {/* T10-T13 の実装時に埋めるアンカー（T08 のスクロール先）。 */}
+        <section aria-label="ポートフォリオ構成" className="scroll-mt-8">
+          <PortfolioBreakdown loans={dataset.loans} regional={dataset.regional} />
+        </section>
+        {/* T11-T13 の実装時に埋めるアンカー（T08 のスクロール先）。 */}
         <div id="default-section" className="scroll-mt-8" aria-hidden />
         <div id="trigger-section" className="scroll-mt-8" aria-hidden />
         <div id="prepayment-section" className="scroll-mt-8" aria-hidden />

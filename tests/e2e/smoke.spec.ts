@@ -101,3 +101,26 @@ test("dashboard trend charts render 5 tabs and switch within 300ms", async ({ pa
     expect(Date.now() - start).toBeLessThan(300);
   }
 });
+
+test("dashboard portfolio breakdown shows 4 charts and 東京都 is the top prefecture", async ({
+  page,
+}) => {
+  await page.goto("/dashboard");
+  await expect(page.getByTestId("dashboard-portfolio-grid")).toBeVisible();
+
+  for (const id of [
+    "dashboard-portfolio-interest-type",
+    "dashboard-portfolio-property-type",
+    "dashboard-portfolio-prefecture",
+    "dashboard-portfolio-age",
+  ]) {
+    const card = page.getByTestId(id);
+    await expect(card).toBeVisible();
+    await expect(card.locator("svg").first()).toBeVisible();
+  }
+
+  // First Y-axis tick in the prefecture bar chart is the top-ranked prefecture (東京都)
+  const prefCard = page.getByTestId("dashboard-portfolio-prefecture");
+  const firstYTick = prefCard.locator(".recharts-yAxis .recharts-cartesian-axis-tick").first();
+  await expect(firstYTick).toHaveText("東京都");
+});
