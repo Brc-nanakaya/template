@@ -185,20 +185,20 @@
 
 ---
 
-### [ ] T10: ポートフォリオ構成（4分割）
-**ステータス**: 未着手  
+### [x] T10: ポートフォリオ構成（4分割）
+**ステータス**: 完了  
 **依存**: T07  
 **作業内容**:
-- 4分割レイアウトで以下を表示:
-  - 金利タイプ構成（ドーナツ）
-  - 物件種別構成（ドーナツ）
-  - 都道府県別残高Top10（横棒、延滞率で色濃淡）
-  - 債務者年齢分布（ヒストグラム、5歳刻み）
-- data-testid: `dashboard-portfolio-[name]`
+- `components/dashboard/PortfolioBreakdown.tsx` を新規実装（`lg:grid-cols-2` で 4 カード配置）
+- 金利タイプ構成 / 物件種別構成: recharts `PieChart` ドーナツ（`innerRadius=45 / outerRadius=75`）、凡例に残高シェア＋件数、色は固定/変動/固定期間選択 & 戸建/マンション/土地/その他に割り当て
+- 都道府県別残高 Top10: `BarChart` layout=vertical、`Cell.fill` を 90日以上延滞率の最大値で正規化した `rgba(11,37,69, 0.35-1.0)` で濃淡
+- 債務者年齢分布: 5歳刻みヒストグラム（25-69）を `calculatePortfolioStats.age_histogram` から描画、Tooltip に件数＋シェア
+- `app/dashboard/page.tsx` に `<PortfolioBreakdown loans={dataset.loans} regional={dataset.regional} />` を追加、時系列チャートの直後に配置
+- data-testid: `dashboard-portfolio-grid`, `dashboard-portfolio-interest-type`, `dashboard-portfolio-property-type`, `dashboard-portfolio-prefecture`, `dashboard-portfolio-age`, `dashboard-portfolio-prefecture-bar-<都道府県>`
 
 **完了条件**:
-- [ ] 4つ全てにチャート表示
-- [ ] 都道府県ランキングで東京都が最上位
+- [x] 4つ全てにチャート表示（E2E `dashboard portfolio breakdown shows 4 charts` で 4 カード × SVG の可視性を検証、3ブラウザ 3/3 グリーン）
+- [x] 都道府県ランキングで東京都が最上位（E2E で Top10 横棒の先頭 YAxis tick が「東京都」と一致することを検証）
 
 ---
 
@@ -286,17 +286,25 @@
 
 ---
 
-### [ ] T16: 印刷CSS＋PDF/Markdown出力
-**ステータス**: 未着手  
+### [x] T16: 印刷CSS＋PDF/Markdown出力
+**ステータス**: 完了  
 **依存**: T15  
 **作業内容**:
-- `styles/print.css`: @media print、A4、余白20mm、H2前ページ区切り、ヘッダー/フッター
-- 「PDFダウンロード」ボタンで `window.print()` トリガー
-- 「Markdownコピー」「Markdownダウンロード」機能
+- `styles/print.css`: @media print で A4 縦・余白 20mm、H2 前でページ区切り（初出 H2 のみ `break-before: avoid`）、
+  `@page @top-left/@top-right` に製品名・レポート種別、`@bottom-center` にページ番号（`counter(page)/counter(pages)`）。
+  ツールバー類は `print:hidden` / `[role="toolbar"]` / `button` / `nav` を一括非表示、プレビュー枠線・影も外す。
+  テーブル枠線・背景色は `-webkit-print-color-adjust: exact` で保持。
+- `app/layout.tsx` に `import "../styles/print.css"` を追加してグローバル適用。
+- `ReportPreview.tsx`: 「PDFダウンロード」ボタンで `onDownloadPdf` 未指定時は `window.print()` を呼び出し。
+  「Markdownコピー」は `navigator.clipboard.writeText` を利用し `onCopySuccess`/`onCopyError` を通知。
+  「Markdownダウンロード」は `Blob` + `URL.createObjectURL` で `<a download>` を合成クリック、
+  `onDownloadMd` 差し替えで T17 のトースト連携や差替えに対応可能。
+- ユニットテスト: `tests/unit/report-preview.test.tsx`（8 ケース）で PDF/Markdown コピー/ダウンロードの
+  各経路、カスタムハンドラ優先、Clipboard API 不可時のエラーコールバックを検証。
 
 **完了条件**:
-- [ ] 印刷プレビューでレポートがA4レイアウトで表示
-- [ ] Markdownダウンロードで.mdファイルが保存される
+- [x] 印刷プレビューでレポートがA4レイアウトで表示（`styles/print.css` + `app/layout.tsx` インポートで全ページに適用、A4 portrait/20mm/ページ番号フッター）
+- [x] Markdownダウンロードで.mdファイルが保存される（ReportPreview の Blob 合成クリックフローをユニットテスト `downloads markdown via Blob URL with filenameBase` で検証）
 
 ---
 
@@ -406,9 +414,9 @@
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
 | UI実装 | T06-T14 | 4/9 |
-| レポート・仕上げ | T15-T18 | 1/4 |
+| レポート・仕上げ | T15-T18 | 2/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **10/23** |
+| **合計** | **T01-T23** | **11/23** |
 
 ---
 
