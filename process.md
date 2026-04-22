@@ -54,19 +54,19 @@
 
 ---
 
-### [ ] T03: データローダー＋ユニットテスト
-**ステータス**: 未着手  
+### [x] T03: データローダー＋ユニットテスト
+**ステータス**: 完了  
 **依存**: T02  
 **作業内容**:
-- `lib/loaders.ts` に papaparse ベースのローダー実装
-- 関数: `loadDealInfo`, `loadMonthlyPerformance`, `loadLoanTape`, `loadDelinquencyAging`, `loadPrepaymentDetail`, `loadDefaultRecovery`, `loadWaterfallHistory`, `loadTriggerHistory`, `loadRegionalBreakdown`, `loadAllSampleData`（並列ロード）
-- 数値パースヘルパー（カンマ区切り、%、BOM処理）
-- ユーザーアップロード用の変換関数も用意
+- `lib/loaders.ts` に papaparse ベースのローダー実装（server fs / browser fetch の isomorphic）
+- 関数: `loadDealInfo`, `loadMonthlyPerformance`, `loadLoanTape`, `loadDelinquencyAging`, `loadPrepaymentDetail`, `loadDefaultRecovery`, `loadWaterfallHistory`, `loadTriggerHistory`, `loadRegionalBreakdown`, `loadServicerMonthlyReport`, `loadAllSampleData`（Promise.all 並列ロード）
+- 数値パースヘルパー（`parseNumber`: カンマ区切り・%・¥・百万円・BOM対応、`parseBoolean`、`stripBOM`、汎用 `parseCSV`）
+- ユーザーアップロード用の `convertUserUpload(kind, text)` 変換関数
 
 **完了条件**:
-- [ ] `tests/unit/loaders.test.ts` でパースヘルパー3ケース、各ローダー正常系
-- [ ] `loadAllSampleData` が全データを正しい件数で返す（loan: 200, monthly: 24, default: 118, prepay: 586）
-- [ ] `npm test` 全グリーン
+- [x] `tests/unit/loaders.test.ts` でパースヘルパー（stripBOM/parseNumber/parseBoolean/parseCSV）計9ケース、各ローダー正常系（deal/monthly/loan/aggregate）4ケース、ドメインパーサー 2ケース、convertUserUpload 2ケース、非正常系 1ケース
+- [x] `loadAllSampleData` が全データを正しい件数で返す（loan: 200, monthly: 24, default: 118, prepay: 586、regional 47, trigger 96, waterfall 144, aging 72）
+- [x] `npm test` 全グリーン（18 + 既存 smoke 1 = 19/19）
 
 ---
 
@@ -393,11 +393,11 @@
 
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
-| 基盤 | T01-T05 | 2/5 |
+| 基盤 | T01-T05 | 3/5 |
 | UI実装 | T06-T14 | 0/9 |
 | レポート・仕上げ | T15-T18 | 0/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **2/23** |
+| **合計** | **T01-T23** | **3/23** |
 
 ---
 
