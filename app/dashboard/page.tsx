@@ -15,6 +15,7 @@ import { WaterfallTable } from "@/components/dashboard/WaterfallTable";
 import { TriggerStatusTable } from "@/components/dashboard/TriggerStatusTable";
 import { LoanTapeTable } from "@/components/dashboard/LoanTapeTable";
 import { CommentaryEditor } from "@/components/dashboard/CommentaryEditor";
+import { DashboardTour } from "@/components/dashboard/DashboardTour";
 import { toastError } from "@/lib/toast";
 
 type LoadState =
@@ -146,6 +147,7 @@ export default function DashboardPage() {
           triggerStatus={dataset.triggers}
         />
       </div>
+      <DashboardTour />
     </main>
   );
 }
