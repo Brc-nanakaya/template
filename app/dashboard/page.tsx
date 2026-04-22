@@ -13,6 +13,7 @@ import { PortfolioBreakdown } from "@/components/dashboard/PortfolioBreakdown";
 import { PrepaymentDefaultAnalysis } from "@/components/dashboard/PrepaymentDefaultAnalysis";
 import { WaterfallTable } from "@/components/dashboard/WaterfallTable";
 import { TriggerStatusTable } from "@/components/dashboard/TriggerStatusTable";
+import { LoanTapeTable } from "@/components/dashboard/LoanTapeTable";
 
 type LoadState =
   | { kind: "loading" }
@@ -133,8 +134,9 @@ export default function DashboardPage() {
             deal={dataset.deal}
           />
         </div>
-        {/* T13 の実装時に個別債権ドリルダウンを埋めるアンカー。 */}
-        <div id="servicer-section" className="scroll-mt-8" aria-hidden />
+        <div id="servicer-section" className="scroll-mt-8">
+          <LoanTapeTable loans={dataset.loans} />
+        </div>
       </div>
     </main>
   );

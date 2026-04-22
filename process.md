@@ -239,19 +239,26 @@
 
 ---
 
-### [ ] T13: 個別債権ドリルダウン
-**ステータス**: 未着手  
+### [x] T13: 個別債権ドリルダウン
+**ステータス**: 完了  
 **依存**: T07  
 **作業内容**:
-- アコーディオン: 延滞債権一覧・デフォルト債権一覧
-- `LoanTapeTable.tsx`: 検索・ソート・フィルタ可能なテーブル
-- `app/dashboard/loan-detail/[id]/page.tsx`: 個別詳細ページ
-- data-testid: `dashboard-loan-accordion`, `dashboard-loan-search`, `dashboard-loan-sort-[col]`, `dashboard-loan-row-[id]`
+- `components/dashboard/LoanTapeTable.tsx`: 延滞債権 / デフォルト債権の 2 グループをアコーディオン表示。
+  loan_id / 都道府県 の OR 検索、現在残高・金利・延滞日数の昇降ソート、ステータスバッジ色分け、
+  行クリックで `router.push("/dashboard/loan-detail/{loan_id}")` で詳細ページへ遷移。
+- `app/dashboard/loan-detail/[id]/page.tsx`: 個別債権詳細を Server Component で実装。
+  属性情報・期限前弁済履歴・デフォルト回収情報を表示、ダッシュボードへの戻り導線、
+  未知 loan_id は `notFound()` で 404。
+- data-testid: `dashboard-loan-accordion`, `dashboard-loan-accordion-{delinquent|default}`,
+  `dashboard-loan-panel-{group}`, `dashboard-loan-search`,
+  `dashboard-loan-sort-{current-balance|interest-rate|delinquency-days}` (`data-sort-dir` 属性付き),
+  `dashboard-loan-row-{loan_id}`, 詳細ページは `loan-detail-id`, `loan-detail-current-balance`,
+  `loan-detail-back` など。
 
 **完了条件**:
-- [ ] 延滞債権一覧を展開し、検索で絞り込み可能
-- [ ] 「現在残高」列でソート可能（昇降両方）
-- [ ] 行クリックで詳細ページに遷移、該当債権情報表示
+- [x] 延滞債権一覧を展開し、検索で絞り込み可能（延滞グループは既定で展開、検索は loan_id / 都道府県の部分一致）
+- [x] 「現在残高」列でソート可能（昇降両方）（`data-sort-dir=asc|desc` でトグル、初期 desc）
+- [x] 行クリックで詳細ページに遷移、該当債権情報表示（属性 + 期限前弁済履歴 + デフォルト明細を表示、`loan-detail-id` / `loan-detail-current-balance` で E2E 検証可能）
 
 ---
 
@@ -427,10 +434,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 7/9 |
+| UI実装 | T06-T14 | 8/9 |
 | レポート・仕上げ | T15-T18 | 2/4 |
 | E2E | T19-T23 | 1/5 |
-| **合計** | **T01-T23** | **15/23** |
+| **合計** | **T01-T23** | **16/23** |
 
 ---
 
