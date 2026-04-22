@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: [["html", { open: "never" }], ["list"]],
   timeout: 60_000,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:3100",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -20,8 +20,9 @@ export default defineConfig({
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
+    // 3000 は他プロジェクトとの競合回避のため 3100 を使用。
+    command: "npx next dev -p 3100",
+    url: "http://localhost:3100",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
