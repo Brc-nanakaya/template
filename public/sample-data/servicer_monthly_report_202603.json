@@ -1,0 +1,68 @@
+{
+  "report_month": "2026-03",
+  "deal_id": "SBIST-RMBS-2024-01",
+  "servicer": "SBI新生銀行",
+  "servicer_rating": "A+",
+  "submission_date": "2026-04-15",
+  "pool": {
+    "balance_mm": 96651,
+    "previous_balance_mm": 97685.4,
+    "scheduled_principal_mm": 281.5,
+    "prepayment_principal_mm": 708.8,
+    "default_principal_mm": 44.12,
+    "recovery_mm": 29.81
+  },
+  "delinquency": {
+    "rate_30_59": 0.0125,
+    "rate_60_89": 0.0048,
+    "rate_90_plus": 0.0065
+  },
+  "performance": {
+    "cpr_annual": 0.0837,
+    "cdr_annual": 0.0054,
+    "cumulative_default_rate": 0.0077,
+    "cumulative_prepayment_rate": 0.1631,
+    "servicer_recovery_rate": 0.6757
+  },
+  "beneficiary_interest": {
+    "senior_balance_mm": 86518.9,
+    "subordinated_balance_mm": 10132.1,
+    "subordination_ratio": 0.1048
+  },
+  "trigger_status": [
+    {
+      "name": "累積デフォルト率",
+      "threshold": 0.03,
+      "current_value": 0.0077,
+      "breach": false,
+      "direction": "above_breach"
+    },
+    {
+      "name": "90日以上延滞率",
+      "threshold": 0.015,
+      "current_value": 0.0065,
+      "breach": false,
+      "direction": "above_breach"
+    },
+    {
+      "name": "CPR（年率）",
+      "threshold": 0.25,
+      "current_value": 0.0837,
+      "breach": false,
+      "direction": "above_breach"
+    },
+    {
+      "name": "劣後比率下限",
+      "threshold": 0.07,
+      "current_value": 0.1048,
+      "breach": false,
+      "direction": "below_breach"
+    }
+  ],
+  "totals": {
+    "loan_count_current": 198,
+    "default_cumulative_count": 123,
+    "prepayment_cumulative_count": 647
+  },
+  "notes": "本報告書はサービサーが作成した月次期中管理報告です。信託期中管理レポートツールのサンプルデータとして生成されています。"
+}

@@ -1,16 +1,24 @@
-node_modules/
-.env
-.env.local
+node_modules
+.next
+out
+build
+dist
+
+.env*
+!.env.local.example
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.DS_Store
-dist/
-build/
-coverage/
-*.log
-.vscode/
-.idea/
 
-# Prisma
-prisma/migrations/dev.db*
+.DS_Store
+*.pem
+
+coverage
+.vercel
+
+playwright-report
+test-results
+
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks.json

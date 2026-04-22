@@ -1,0 +1,35 @@
+{
+  "deal_id": "SBIST-RMBS-2024-01",
+  "deal_name": "SBI新生住宅ローン信託 第1回特定社債型受益権",
+  "contract_number": "TR-2024-00012",
+  "asset_type": "住宅ローン債権（信託受益権）",
+  "originator": "SBI新生銀行",
+  "servicer": "SBI新生銀行",
+  "backup_servicer": "株式会社日本住宅ローン債権回収",
+  "trustee": "SBI新生信託銀行",
+  "servicer_rating": "A+",
+  "servicer_rating_agency": "JCR",
+  "closing_date": "2024-04-25",
+  "report_month": "2026-03",
+  "report_cutoff_date": "2026-03-31",
+  "initial_pool_balance_yen": 120000000000,
+  "initial_pool_balance_mm": 120000,
+  "senior_coupon_rate": 0.0092,
+  "subordinated_coupon_rate": 0.022,
+  "senior_initial_balance_mm": 108000,
+  "subordinated_initial_balance_mm": 12000,
+  "trigger_thresholds": {
+    "cumulative_default_rate": 0.03,
+    "delinquency_90_rate": 0.015,
+    "cpr_annual": 0.25,
+    "subordination_ratio_min": 0.07
+  },
+  "waterfall_priority": [
+    "信託報酬・諸費用",
+    "サービシング手数料",
+    "優先受益権 利息",
+    "優先受益権 元本",
+    "準備金積立",
+    "劣後受益権 配当"
+  ]
+}
