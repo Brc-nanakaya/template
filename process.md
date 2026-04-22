@@ -40,16 +40,17 @@
 
 ---
 
-### [ ] T02: 型定義（lib/types.ts）
-**ステータス**: 未着手  
+### [x] T02: 型定義（lib/types.ts）
+**ステータス**: 完了  
 **依存**: T01  
 **作業内容**:
 以下の型を定義（CSVヘッダーと完全一致）:
 - `DealInfo`, `MonthlyPerformance`, `LoanRecord`, `DelinquencyAging`, `PrepaymentRecord`, `DefaultRecord`, `WaterfallRecord`, `TriggerTest`, `RegionalBreakdown`, `Anomaly`
+- 追加で `ServicerMonthlyReport`, `TrustDataset` (loadAllSampleData の戻り値) と各種リテラル型
 
 **完了条件**:
-- [ ] `lib/types.ts` に全10型を定義
-- [ ] `tsc --noEmit` でエラーなし
+- [x] `lib/types.ts` に全10型を定義
+- [x] `tsc --noEmit` でエラーなし
 
 ---
 
@@ -392,11 +393,11 @@
 
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
-| 基盤 | T01-T05 | 1/5 |
+| 基盤 | T01-T05 | 2/5 |
 | UI実装 | T06-T14 | 0/9 |
 | レポート・仕上げ | T15-T18 | 0/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **1/23** |
+| **合計** | **T01-T23** | **2/23** |
 
 ---
 
