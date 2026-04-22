@@ -129,19 +129,21 @@
 
 ---
 
-### [ ] T07: ダッシュボード骨組み＋KPIカード
-**ステータス**: 未着手  
+### [x] T07: ダッシュボード骨組み＋KPIカード
+**ステータス**: 完了  
 **依存**: T04, T06  
 **作業内容**:
-- `app/dashboard/page.tsx` 骨組み
-- ヘッダー（案件名、契約番号、報告基準月、出力ボタン、リセットボタン）
-- `components/dashboard/SummaryKpiCards.tsx`: KPIカード6枚（プール残高、残存率、90日以上延滞率、累積デフォルト率、優先受益権残高、サービサー回収率）
-- 各KPIに前月比・ミニチャート or バー表示
-- data-testid: `dashboard-header`, `dashboard-kpi-[name]` 等
+- `app/dashboard/page.tsx` 骨組み（Client Component、`loadAllSampleData` を `useEffect` で呼び出して `calculateMonthlyMetrics` を実行、loading / ready / error の 3 状態を管理、スケルトン表示も同ページで対応）
+- `components/dashboard/DashboardHeader.tsx`: 案件名、契約番号、報告基準月、受託者、レポート出力ボタン (`window.print` 暫定) 、デモリセットボタン（sessionStorage クリア → `/`）
+- `components/dashboard/SummaryKpiCards.tsx`: KPIカード6枚（プール残高、残存率、90日以上延滞率、累積デフォルト率、優先受益権残高、サービサー回収率）を `grid-cols-1 / sm:grid-cols-2 / xl:grid-cols-3` で配置
+- `components/dashboard/KpiCard.tsx`: タイトル・値・前月比（色分け: good/warn/danger/neutral）・補助説明・スパークラインを表示する共通カード
+- `components/dashboard/Sparkline.tsx`: 依存なしの SVG スパークライン（直近12ヶ月推移）
+- `lib/formatters.ts`: `fmtMm` (`96,651百万円 (966.5億円)`) ・`fmtPct`・`fmtSignedPct`・`fmtSignedPp`・`fmtSignedMm`・`fmtMonth` を共通化
+- data-testid: `dashboard-main`, `dashboard-skeleton`, `dashboard-header`, `dashboard-header-deal-name`, `dashboard-header-contract`, `dashboard-header-report-month`, `dashboard-btn-export`, `dashboard-btn-reset`, `dashboard-kpi-summary`, `dashboard-kpi-{pool-balance|retention-rate|delinquency-90|cumulative-default|senior-balance|servicer-recovery}` と `-value` / `-delta` サフィックス
 
 **完了条件**:
-- [ ] サンプルデータ遷移時に6枚のKPIに実数値が表示
-- [ ] プール残高 96,651百万円前後、90日以上延滞率 0.5-0.7%範囲で表示
+- [x] サンプルデータ遷移時に6枚のKPIに実数値が表示（E2E `dashboard shows header and 6 KPI cards` で testid 6 件を検証、3 ブラウザ 3/3 グリーン）
+- [x] プール残高 96,651百万円前後、90日以上延滞率 0.5-0.7%範囲で表示（E2E で正規表現 `96,6\d\d` と 0.5 ≤ rate ≤ 0.7 を検証）
 
 ---
 
@@ -396,10 +398,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 1/9 |
+| UI実装 | T06-T14 | 2/9 |
 | レポート・仕上げ | T15-T18 | 0/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **6/23** |
+| **合計** | **T01-T23** | **7/23** |
 
 ---
 
