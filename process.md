@@ -112,18 +112,20 @@
 
 ---
 
-### [ ] T06: トップページ
-**ステータス**: 未着手  
+### [x] T06: トップページ
+**ステータス**: 完了  
 **依存**: T03  
 **作業内容**:
-- `app/page.tsx` 実装
-- 要素: タイトル、サブタイトル、「サンプルデータで今すぐデモ」ボタン、アップロード領域
-- data-testid: `home-title`, `home-subtitle`, `home-btn-load-sample`, `home-upload-area`, `home-input-file`, `home-btn-go-dashboard`
-- デザイン: カード中央配置、信託銀行トーン
+- `app/page.tsx` を Client Component で実装（`useRouter` + `sessionStorage` にデータソース種別を格納）
+- 要素: ヘッダー（TrustReport バッジ・タイトル・サブタイトル）、プライマリ CTA「サンプルデータで今すぐデモ」、区切り線、CSV/JSON ドラッグ＆ドロップ領域（クリックで `<input type=file>` を開く）、アップロードデータでダッシュボードへ進むボタン、フッター
+- data-testid: `home-title`, `home-subtitle`, `home-btn-load-sample`, `home-upload-area`, `home-input-file`, `home-btn-go-dashboard`（未選択時 disabled）、補助で `home-main`, `home-upload-filename`, `home-upload-error`
+- 拡張子バリデーション（.csv / .json のみ）、非対応時はエラー表示でトーストを待たず即フィードバック
+- デザイン: ネイビー `#0B2545`・ゴールドアクセント `#D4A017`・Noto Sans JP、カード中央配置、`bg-trust-bg` ベース、キーボード操作対応
+- `/dashboard` への遷移先として `app/dashboard/page.tsx` にプレースホルダを配置（T07 で本実装）
 
 **完了条件**:
-- [ ] ブラウザで意図通りに表示される
-- [ ] 「サンプルデータで今すぐデモ」クリックで `/dashboard` に遷移
+- [x] ブラウザで意図通りに表示される（Chromium / Firefox / WebKit 3 ブラウザで smoke テスト通過）
+- [x] 「サンプルデータで今すぐデモ」クリックで `/dashboard` に遷移（E2E `sample-data CTA navigates to /dashboard` でカバー、6/6 グリーン）
 
 ---
 
@@ -394,10 +396,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 0/9 |
+| UI実装 | T06-T14 | 1/9 |
 | レポート・仕上げ | T15-T18 | 0/4 |
 | E2E | T19-T23 | 0/5 |
-| **合計** | **T01-T23** | **5/23** |
+| **合計** | **T01-T23** | **6/23** |
 
 ---
 
