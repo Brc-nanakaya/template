@@ -221,17 +221,21 @@
 
 ---
 
-### [ ] T12: ウォーターフォール・トリガー状況
-**ステータス**: 未着手  
+### [x] T12: ウォーターフォール・トリガー状況
+**ステータス**: 完了  
 **依存**: T07  
 **作業内容**:
-- `WaterfallTable.tsx`: 当月CF配分の棒グラフ＋24ヶ月の劣後配当推移
-- `TriggerStatusTable.tsx`: 4トリガーのProgressバー＋Badge、predictTriggerBreach の予測月表示
-- data-testid: `dashboard-waterfall-table`, `dashboard-trigger-table`, `dashboard-trigger-row-[name]`
+- `components/dashboard/WaterfallTable.tsx`: 当月のキャッシュフロー配分を横棒グラフ（recharts）＋階層別テーブルで表示。
+  劣後受益権 配当の 24ヶ月推移を折れ線で併置。data-testid: `dashboard-waterfall-table`, `dashboard-waterfall-row-{priority_order}`。
+- `components/dashboard/TriggerStatusTable.tsx`: 4 トリガーそれぞれを進捗バー + 状態バッジ（未抵触 / 警戒 / 抵触）で表示。
+  `predictTriggerBreach` による抵触予測月も併記。data-testid: `dashboard-trigger-table`, `dashboard-trigger-row-{name}`,
+  `dashboard-trigger-badge-{name}` （`data-status` 属性で色分け判定可）。
+- 警戒基準: `above_breach` 系は current/threshold ≥ 70%、`below_breach` 系は current ≤ threshold × 110%。
+- `app/dashboard/page.tsx` の `waterfall-section` / `trigger-section` アンカーに実装を配置。
 
 **完了条件**:
-- [ ] ウォーターフォール6階層が表示
-- [ ] トリガー4つ全てに抵触状況表示、「未抵触」「警戒」「抵触」の色分け
+- [x] ウォーターフォール6階層が表示（decimal `priority_order` ごとに行・棒・ドットカラーが対応、合計行あり）
+- [x] トリガー4つ全てに抵触状況表示、「未抵触」「警戒」「抵触」の色分け（バッジ + 進捗バー + ドットで視覚化、`data-status` で属性取得可能）
 
 ---
 
@@ -423,10 +427,10 @@
 | フェーズ | タスク | 完了 |
 |---------|------|-----|
 | 基盤 | T01-T05 | 5/5 |
-| UI実装 | T06-T14 | 6/9 |
+| UI実装 | T06-T14 | 7/9 |
 | レポート・仕上げ | T15-T18 | 2/4 |
 | E2E | T19-T23 | 1/5 |
-| **合計** | **T01-T23** | **14/23** |
+| **合計** | **T01-T23** | **15/23** |
 
 ---
 

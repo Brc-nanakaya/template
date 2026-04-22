@@ -11,6 +11,8 @@ import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
 import { TrendCharts } from "@/components/dashboard/TrendCharts";
 import { PortfolioBreakdown } from "@/components/dashboard/PortfolioBreakdown";
 import { PrepaymentDefaultAnalysis } from "@/components/dashboard/PrepaymentDefaultAnalysis";
+import { WaterfallTable } from "@/components/dashboard/WaterfallTable";
+import { TriggerStatusTable } from "@/components/dashboard/TriggerStatusTable";
 
 type LoadState =
   | { kind: "loading" }
@@ -118,9 +120,20 @@ export default function DashboardPage() {
             />
           </div>
         </div>
-        {/* T12-T13 の実装時に埋めるアンカー（T08 のスクロール先）。 */}
-        <div id="trigger-section" className="scroll-mt-8" aria-hidden />
-        <div id="waterfall-section" className="scroll-mt-8" aria-hidden />
+        <div id="waterfall-section" className="scroll-mt-8">
+          <WaterfallTable
+            waterfall={dataset.waterfall}
+            reportMonth={dataset.deal.report_month}
+          />
+        </div>
+        <div id="trigger-section" className="scroll-mt-8">
+          <TriggerStatusTable
+            triggers={dataset.triggers}
+            reportMonth={dataset.deal.report_month}
+            deal={dataset.deal}
+          />
+        </div>
+        {/* T13 の実装時に個別債権ドリルダウンを埋めるアンカー。 */}
         <div id="servicer-section" className="scroll-mt-8" aria-hidden />
       </div>
     </main>
