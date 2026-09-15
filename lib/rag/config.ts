@@ -8,7 +8,7 @@
 
 export type AppEnv = "local" | "demo" | "prod";
 export type RagStorageDriver = "fs" | "s3";
-export type RagLlmProvider = "extractive" | "bedrock";
+export type RagLlmProvider = "extractive" | "openai" | "bedrock";
 
 const APP_ENVS: readonly AppEnv[] = ["local", "demo", "prod"];
 
@@ -29,7 +29,7 @@ export function getRagStorageDriver(): RagStorageDriver {
 
 export function getRagLlmProvider(): RagLlmProvider {
   const raw = (process.env.RAG_LLM ?? "").trim().toLowerCase();
-  if (raw === "bedrock" || raw === "extractive") return raw;
+  if (raw === "bedrock" || raw === "extractive" || raw === "openai") return raw;
   return "extractive";
 }
 
@@ -51,6 +51,26 @@ export function getBedrockModelId(): string {
     process.env.RAG_BEDROCK_MODEL_ID?.trim() ||
     "anthropic.claude-3-5-sonnet-20240620-v1:0"
   );
+}
+
+export function getNeo4jUri(): string {
+  const raw = process.env.NEO4J_URI?.trim();
+  if (raw === "off" || raw === "disable" || process.env.NEO4J_DISABLED === "1") {
+    return "";
+  }
+  if (raw) return raw;
+  return getAppEnv() === "local" ? "bolt://localhost:7687" : "";
+}
+
+export function getNeo4jAuth(): { user: string; password: string } {
+  return {
+    user: process.env.NEO4J_USER?.trim() || "neo4j",
+    password: process.env.NEO4J_PASSWORD?.trim() || "raglocal",
+  };
+}
+
+export function getNeo4jBrowserUrl(): string {
+  return process.env.NEO4J_BROWSER_URL?.trim() || "http://localhost:7474";
 }
 
 export interface RagRuntimeStatus {
@@ -87,7 +107,7 @@ export function getRagRuntimeStatus(): RagRuntimeStatus {
           "大量 PDF の取込時間",
           "東京リージョンへのデータ所在",
           "S3 バルクロード / VPC / IAM",
-          "Neptune や GraphRAG の性能",
+          "Neptune（openCypher）の性能。ローカルは Neo4j / Cypher",
         ]
       : [
           "ローカルと完全に同じ埋め込み順位",

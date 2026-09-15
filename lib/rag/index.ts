@@ -4,6 +4,7 @@ export { DEMO_LAWS } from "./demo-corpus";
 export { evaluateCorpus } from "./eval";
 export { RAG_EVAL_CASES } from "./eval-cases";
 export { ingestDemoCorpus } from "./ingest";
+export { ingestOrdinancePdf } from "./ingest-pdf";
 export { parseLawMarkdown } from "./parse";
 export { retrieveFromMemory } from "./retrieve";
 export type { RagAnswer, RagEvalReport } from "./types";

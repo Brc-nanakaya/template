@@ -15,6 +15,13 @@
       "when": 1789439671562,
       "tag": "0001_orange_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789440945083,
+      "tag": "0002_long_vulture",
+      "breakpoints": true
     }
   ]
 }

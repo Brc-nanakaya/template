@@ -1,5 +1,7 @@
 import { DEMO_LAWS } from "./demo-corpus";
 import { listRagDocuments, replaceLawIngest, resolveCrossLawReferences } from "./db";
+import { syncOrdinanceGraph } from "./graph";
+import { embedLocal } from "./embed";
 import { parseLawMarkdown } from "./parse";
 import { objectKeyFor, putObject } from "./storage";
 
@@ -34,12 +36,25 @@ export async function ingestDemoCorpus(options?: {
       title: law.title,
       markdown: law.body,
     });
+    const chunks = parsed.chunks.map((c) => ({
+      ...c,
+      pageStart: 1,
+      embedding: embedLocal(`${c.heading ?? ""} ${c.body}`),
+    }));
     await replaceLawIngest({
       lawId: law.lawId,
       title: law.title,
       fileName: law.fileName,
       objectKey,
-      chunks: parsed.chunks,
+      sourceType: "text",
+      pageCount: 1,
+      chunks,
+      references: parsed.references,
+    });
+    await syncOrdinanceGraph({
+      lawId: law.lawId,
+      title: law.title,
+      chunks,
       references: parsed.references,
     });
     results.push({

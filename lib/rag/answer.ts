@@ -1,18 +1,31 @@
-import type { RagAnswer, RetrievalHit } from "./types";
+import type { Citation, RagAnswer, RetrievalHit } from "./types";
 
-function toCitation(hit: RetrievalHit) {
+function toCitation(hit: RetrievalHit): Citation {
+  const quote =
+    hit.chunk.body.length > 280
+      ? `${hit.chunk.body.slice(0, 280)}…`
+      : hit.chunk.body;
   return {
     chunkKey: hit.chunk.chunkKey,
     lawTitle: hit.chunk.lawTitle,
     article: hit.chunk.article,
     heading: hit.chunk.heading,
-    quote: hit.chunk.body,
+    quote,
+    documentId: hit.chunk.documentId,
+    fileName: hit.chunk.fileName,
+    pageStart: hit.chunk.pageStart ?? null,
+    fileUrl: hit.chunk.documentId
+      ? `/api/rag/documents/${hit.chunk.documentId}/file${
+          hit.chunk.pageStart ? `#page=${hit.chunk.pageStart}` : ""
+        }`
+      : undefined,
   };
 }
 
 function label(hit: RetrievalHit): string {
   const heading = hit.chunk.heading ? `（${hit.chunk.heading}）` : "";
-  return `${hit.chunk.lawTitle} 第${hit.chunk.article}条${heading}`;
+  const page = hit.chunk.pageStart ? `（PDF p.${hit.chunk.pageStart}）` : "";
+  return `${hit.chunk.lawTitle} 第${hit.chunk.article}条${heading}${page}`;
 }
 
 /**
@@ -28,7 +41,7 @@ export function answerExtractive(
   if (primary.length === 0) {
     return {
       answer:
-        "根拠となる条文が見つかりませんでした。条番号または規程名を指定して再度質問してください。",
+        "根拠となる条文が見つかりませんでした。条番号または条例名を指定して再度質問してください。",
       abstained: true,
       citations: [],
       hops: [],
@@ -49,7 +62,7 @@ export function answerExtractive(
   return {
     answer: lines.join("\n"),
     abstained: false,
-    citations: primary.map(toCitation),
+    citations: [...primary, ...hops].map(toCitation),
     hops,
     provider: "extractive",
   };

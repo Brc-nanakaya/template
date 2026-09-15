@@ -67,6 +67,27 @@ services:
         mc mb -p local/rag-local
         mc anonymous set none local/rag-local
 
+  # 条–条参照グラフ（本番 Neptune の代わり）。本文は持たない。
+  #   npm run graph:up
+  #   ブラウザ: http://localhost:7474  (neo4j / raglocal)
+  neo4j:
+    profiles: ["rag", "graph"]
+    image: neo4j:5.26-community
+    container_name: template-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/raglocal
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p raglocal 'RETURN 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
   # 本番と同じコンテナをローカルで検証する（既定では起動しない）
   #   docker compose --profile app up --build
   #   → http://localhost:3001
@@ -93,3 +114,4 @@ services:
 volumes:
   db-data:
   minio-data:
+  neo4j-data:

@@ -7,7 +7,7 @@ const nextConfig = {
   output: "standalone",
   experimental: {
     // @google/adk は Node.js 専用依存を含むため webpack バンドル対象から除外する
-    serverComponentsExternalPackages: ["@google/adk"],
+    serverComponentsExternalPackages: ["@google/adk", "unpdf", "neo4j-driver"],
   },
 };
 

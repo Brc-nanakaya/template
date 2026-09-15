@@ -1,7 +1,7 @@
 import { answerExtractive } from "./answer";
 import { getRagLlmProvider } from "./config";
 import { loadMemoryCorpus } from "./db";
-import { retrieveFromMemory } from "./retrieve";
+import { expandHopsFromGraph, retrieveHybrid } from "./retrieve";
 import type { RagAnswer } from "./types";
 
 export async function askRag(question: string): Promise<RagAnswer> {
@@ -17,11 +17,17 @@ export async function askRag(question: string): Promise<RagAnswer> {
   }
 
   const corpus = await loadMemoryCorpus();
-  const retrieved = retrieveFromMemory(q, corpus);
+  const retrieved = await expandHopsFromGraph(retrieveHybrid(q, corpus), corpus);
+  const provider = getRagLlmProvider();
 
-  if (getRagLlmProvider() === "bedrock") {
+  if (provider === "bedrock") {
     const { answerWithBedrock } = await import("./bedrock");
     return answerWithBedrock(q, retrieved.hits);
+  }
+
+  if (provider === "openai" || process.env.OPENAI_API_KEY) {
+    const { answerWithOpenAI } = await import("./openai");
+    return answerWithOpenAI(q, retrieved.hits);
   }
 
   return answerExtractive(q, retrieved.hits);

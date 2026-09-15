@@ -1,4 +1,7 @@
+import { cosineSimilarity, embedLocal } from "./embed";
+import { hopChunkKeys } from "./graph";
 import { inferLawIds, parseArticleMentions } from "./parse";
+import { tokenize } from "./tokens";
 import type {
   RagChunk,
   RagReference,
@@ -11,14 +14,7 @@ export interface MemoryCorpus {
   references: RagReference[];
 }
 
-const STOP = new Set(["この", "こと", "ため", "について", "における", "および"]);
-
-export function tokenize(text: string): string[] {
-  return text
-    .split(/[\s、。．，,.!！?？「」『』（）()【】・]/)
-    .flatMap((part) => part.match(/[一-龯ァ-ヴーa-zA-Z0-9]{2,}/g) ?? [])
-    .filter((t) => !STOP.has(t));
-}
+export { tokenize } from "./tokens";
 
 function tokenHits(qToken: string, bodyTokens: string[], body: string): boolean {
   if (body.includes(qToken) || bodyTokens.includes(qToken)) return true;
@@ -51,7 +47,10 @@ export function retrieveFromMemory(
 ): RetrievalResult {
   const hits = new Map<string, RetrievalHit>();
   const articles = parseArticleMentions(query);
-  const lawIds = inferLawIds(query);
+  const lawIds = inferLawIds(
+    query,
+    corpus.chunks.map((c) => ({ lawId: c.lawId, title: c.lawTitle })),
+  );
 
   const candidates = corpus.chunks.filter((c) =>
     lawIds.length === 0 ? true : lawIds.includes(c.lawId),
@@ -95,6 +94,94 @@ export function retrieveFromMemory(
 
   return {
     query,
+    hits: [...hits.values()].sort((a, b) => b.score - a.score),
+  };
+}
+
+const VECTOR_MIN = 0.55;
+
+/**
+ * exact + キーワード + ベクトルを合成し、参照グラフを 1 hop する。
+ */
+export function retrieveHybrid(
+  query: string,
+  corpus: MemoryCorpus,
+): RetrievalResult {
+  const base = retrieveFromMemory(query, corpus);
+  const hits = new Map(base.hits.map((h) => [h.chunk.chunkKey, h]));
+  const queryVec = embedLocal(query);
+
+  const ranked = corpus.chunks
+    .filter((c) => c.embedding && c.embedding.length > 0)
+    .map((chunk) => ({
+      chunk,
+      score: cosineSimilarity(queryVec, chunk.embedding ?? []),
+    }))
+    .filter((x) => x.score >= VECTOR_MIN)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+
+  for (const { chunk, score } of ranked) {
+    const existing = hits.get(chunk.chunkKey);
+    if (!existing) {
+      hits.set(chunk.chunkKey, { chunk, reason: "vector", score });
+      continue;
+    }
+    hits.set(chunk.chunkKey, {
+      ...existing,
+      reason: existing.reason === "hop" ? existing.reason : "hybrid",
+      score: Math.max(existing.score, score),
+    });
+  }
+
+  const seedKeys = [...hits.keys()];
+  for (const key of seedKeys) {
+    const outgoing = corpus.references.filter((r) => r.fromChunkKey === key);
+    for (const ref of outgoing) {
+      const target = corpus.chunks.find(
+        (c) =>
+          c.chunkKey === ref.toChunkKey ||
+          (c.lawId === ref.toLawId && c.article === ref.toArticle),
+      );
+      if (!target || hits.has(target.chunkKey)) continue;
+      hits.set(target.chunkKey, {
+        chunk: target,
+        reason: "hop",
+        score: 0.8,
+        viaChunkKey: key,
+      });
+    }
+  }
+
+  return {
+    query,
+    hits: [...hits.values()].sort((a, b) => b.score - a.score),
+  };
+}
+
+/** Neo4j が生きていれば参照辺で 1 hop を足す。落ちていれば Postgres 側の hop のまま。 */
+export async function expandHopsFromGraph(
+  result: RetrievalResult,
+  corpus: MemoryCorpus,
+): Promise<RetrievalResult> {
+  const hops = await hopChunkKeys(result.hits.map((h) => h.chunk.chunkKey));
+  if (hops.length === 0) return result;
+
+  const hits = new Map(result.hits.map((h) => [h.chunk.chunkKey, h]));
+  for (const hop of hops) {
+    if (hits.has(hop.to)) continue;
+    const target = corpus.chunks.find((c) => c.chunkKey === hop.to);
+    if (!target) continue;
+    hits.set(hop.to, {
+      chunk: target,
+      reason: "hop",
+      score: 0.8,
+      viaChunkKey: hop.from,
+    });
+  }
+
+  return {
+    query: result.query,
     hits: [...hits.values()].sort((a, b) => b.score - a.score),
   };
 }

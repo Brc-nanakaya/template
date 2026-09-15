@@ -13,22 +13,40 @@ export function objectKeyFor(fileName: string): string {
   return `${getRagS3Prefix()}/corpus/${fileName}`;
 }
 
+export function objectKeyForUpload(fileName: string): string {
+  const safe = fileName.replace(/[^\w.\u3040-\u30ff\u4e00-\u9faf-]+/g, "_");
+  return `${getRagS3Prefix()}/uploads/${Date.now()}-${safe}`;
+}
+
 export async function putObject(key: string, body: string): Promise<void> {
+  await putBinary(key, Buffer.from(body, "utf8"), "text/plain; charset=utf-8");
+}
+
+export async function putBinary(
+  key: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> {
   if (getRagStorageDriver() === "s3") {
-    await putS3(key, body);
+    await putS3(key, body, contentType);
     return;
   }
   const full = path.join(getRagLocalDir(), key);
   await mkdir(path.dirname(full), { recursive: true });
-  await writeFile(full, body, "utf8");
+  await writeFile(full, body);
 }
 
 export async function getObject(key: string): Promise<string | null> {
+  const buf = await getBinary(key);
+  return buf ? buf.toString("utf8") : null;
+}
+
+export async function getBinary(key: string): Promise<Buffer | null> {
   if (getRagStorageDriver() === "s3") {
     return getS3(key);
   }
   try {
-    return await readFile(path.join(getRagLocalDir(), key), "utf8");
+    return await readFile(path.join(getRagLocalDir(), key));
   } catch {
     return null;
   }
@@ -53,7 +71,11 @@ async function createS3Client() {
   });
 }
 
-async function putS3(key: string, body: string): Promise<void> {
+async function putS3(
+  key: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> {
   const { PutObjectCommand } = await import("@aws-sdk/client-s3");
   const client = await createS3Client();
   await client.send(
@@ -61,20 +83,21 @@ async function putS3(key: string, body: string): Promise<void> {
       Bucket: getRagS3Bucket(),
       Key: key,
       Body: body,
-      ContentType: "text/markdown; charset=utf-8",
+      ContentType: contentType,
       Metadata: { env: getAppEnv() },
     }),
   );
 }
 
-async function getS3(key: string): Promise<string | null> {
+async function getS3(key: string): Promise<Buffer | null> {
   const { GetObjectCommand } = await import("@aws-sdk/client-s3");
   const client = await createS3Client();
   try {
     const out = await client.send(
       new GetObjectCommand({ Bucket: getRagS3Bucket(), Key: key }),
     );
-    return (await out.Body?.transformToString()) ?? null;
+    const bytes = await out.Body?.transformToByteArray();
+    return bytes ? Buffer.from(bytes) : null;
   } catch {
     return null;
   }

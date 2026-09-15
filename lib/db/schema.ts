@@ -150,6 +150,10 @@ export const ragDocuments = pgTable(
     /** S3 / MinIO / ローカル FS 上のオブジェクトキー */
     objectKey: text("object_key").notNull(),
     sourceType: text("source_type").notNull().default("text"),
+    pageCount: integer("page_count"),
+    uploadedBy: uuid("uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -173,6 +177,9 @@ export const ragChunks = pgTable(
     chunkKey: text("chunk_key").notNull(),
     heading: text("heading"),
     body: text("body").notNull(),
+    pageStart: integer("page_start"),
+    /** ローカルはハッシュ埋め込み、後で OpenAI / Bedrock に差し替え */
+    embedding: jsonb("embedding").$type<number[]>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

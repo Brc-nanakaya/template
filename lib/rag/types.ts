@@ -7,6 +7,10 @@ export interface RagChunk {
   paragraph: number | null;
   heading: string | null;
   body: string;
+  documentId?: string;
+  fileName?: string;
+  pageStart?: number | null;
+  embedding?: number[] | null;
 }
 
 export type RagReferenceKind = "refers" | "applies";
@@ -21,16 +25,22 @@ export interface RagReference {
 }
 
 export interface RagDocumentSummary {
+  id: string;
   lawId: string;
   title: string;
   fileName: string;
   objectKey: string;
+  sourceType: string;
+  pageCount: number | null;
   chunkCount: number;
+  createdAt: string;
 }
+
+export type RetrievalReason = "exact" | "keyword" | "vector" | "hybrid" | "hop";
 
 export interface RetrievalHit {
   chunk: RagChunk;
-  reason: "exact" | "keyword" | "hop";
+  reason: RetrievalReason;
   score: number;
   viaChunkKey?: string;
 }
@@ -46,6 +56,10 @@ export interface Citation {
   article: number;
   heading: string | null;
   quote: string;
+  documentId?: string;
+  fileName?: string;
+  pageStart?: number | null;
+  fileUrl?: string;
 }
 
 export interface RagAnswer {
@@ -53,7 +67,7 @@ export interface RagAnswer {
   abstained: boolean;
   citations: Citation[];
   hops: RetrievalHit[];
-  provider: "extractive" | "bedrock";
+  provider: "extractive" | "openai" | "bedrock";
 }
 
 export interface RagEvalCase {

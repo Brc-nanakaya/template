@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_LAWS } from "@/lib/rag/demo-corpus";
 import {
+  extractReferences,
   inferLawIds,
   parseArticleMentions,
   parseLawMarkdown,
@@ -30,14 +31,49 @@ describe("parseLawMarkdown", () => {
 
   it("準用を参照辺にする", () => {
     const hops = parsed.references.filter((r) => r.fromChunkKey === "demo-internal-control:5");
-    expect(hops).toEqual([
-      expect.objectContaining({
-        toLawId: "demo-internal-control",
-        toArticle: 4,
-        kind: "applies",
-        toChunkKey: "demo-internal-control:4",
-      }),
-    ]);
+    expect(hops).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          toLawId: "demo-internal-control",
+          toArticle: 4,
+          kind: "applies",
+          toChunkKey: "demo-internal-control:4",
+        }),
+      ]),
+    );
+  });
+});
+
+describe("extractReferences", () => {
+  it("前条と他法令の条項を取る", () => {
+    const chunk = {
+      chunkKey: "sample-ordinance:3",
+      lawId: "sample-ordinance",
+      lawTitle: "サンプル条例",
+      article: 3,
+      paragraph: null,
+      heading: null,
+      body: "前条の手続に加え、建築士法施行規則第21条第4項の保存が必要である。監査の手続については第4条の規定を準用する。",
+    };
+    const refs = extractReferences(chunk, "sample-ordinance");
+    expect(refs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          toLawId: "sample-ordinance",
+          toArticle: 2,
+          rawText: "前条",
+        }),
+        expect.objectContaining({
+          toArticle: 21,
+          rawText: "建築士法施行規則第21条第4項",
+        }),
+        expect.objectContaining({
+          toLawId: "sample-ordinance",
+          toArticle: 4,
+          kind: "applies",
+        }),
+      ]),
+    );
   });
 });
 

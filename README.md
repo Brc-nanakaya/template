@@ -138,7 +138,9 @@ drizzle.config.ts           # drizzle-kit 設定
 | `npm run db:setup` | **初回はこれ 1 本**。起動 → マイグレーション → ダミーデータ＋デモ条文 |
 | `npm run rag:eval` | DB なしで法令 RAG の評価セット（制度確認） |
 | `npm run rag:ingest` | デモ条文の再取込（`-- --force` で作り直し） |
-| `npm run env:up` | Postgres + MinIO（S3 互換）。任意 |
+| `npm run graph:up` | ローカル Neo4j（参照グラフ）。http://localhost:7474 |
+| `npm run rag:graph-sync` | 既存条文の参照を再抽出し Neo4j へ同期 |
+| `npm run env:up` | Postgres + MinIO（S3 互換）+ Neo4j。任意 |
 | `npm run db:up` / `db:down` | ローカル Postgres の起動 / 停止（データは残る） |
 | `npm run db:nuke` | 停止してデータも削除 |
 | `npm run db:reset` | 全部消してやり直す |
