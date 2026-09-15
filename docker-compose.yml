@@ -1,0 +1,95 @@
+# ローカル開発用の PostgreSQL と、本番と同じアプリコンテナ。
+#
+# クラウド（AWS RDS / Azure Database for PostgreSQL）と同じ PostgreSQL 16 を
+# ローカルでも使うため、DATABASE_URL の差し替えだけでデプロイできる。
+#
+#   npm run db:up                  DB だけ起動
+#   npm run db:down                停止（データは残る）
+#   npm run db:nuke                停止＋データ削除
+#   npm run docker:up              本番と同じコンテナ + DB を起動（http://localhost:3001）
+#   npm run docker:down            上を停止
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: template-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+      # 日本語データを扱うため UTF-8 で初期化する
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # ホスト側は 5434（他プロジェクトの Postgres と衝突しにくい番号）。
+      # 衝突したら .env.local に DB_PORT=5435 などを書けば変えられる
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # S3 互換ストレージ（本番の東京 S3 の代わり）。
+  #   docker compose --profile rag up -d
+  #   npm run env:up
+  minio:
+    profiles: ["rag"]
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: template-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: rag
+      MINIO_ROOT_PASSWORD: ragsecret
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio-init:
+    profiles: ["rag"]
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 rag ragsecret
+        mc mb -p local/rag-local
+        mc anonymous set none local/rag-local
+
+  # 本番と同じコンテナをローカルで検証する（既定では起動しない）
+  #   docker compose --profile app up --build
+  #   → http://localhost:3001
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      target: runner
+      args:
+        # NEXT_PUBLIC_* はビルド時に焼き込まれるので build args で渡す
+        NEXT_PUBLIC_DEMO_LOGIN_HINT: "true"
+        NEXT_PUBLIC_MOCK_LLM: "true"
+    ports:
+      - "${APP_PORT:-3001}:3000"
+    environment:
+      # コンテナ間はサービス名で解決する（TLS 不要なので DATABASE_SSL=disable）
+      DATABASE_URL: postgres://app:app@db:5432/app
+      DATABASE_SSL: disable
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  minio-data:

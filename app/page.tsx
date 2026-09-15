@@ -1,208 +1,130 @@
-"use client";
+import Link from "next/link";
+import {
+  BarChart3,
+  Bot,
+  CheckSquare,
+  HeartPulse,
+  Scale,
+  Sparkles,
+  UserCircle,
+  type LucideIcon,
+} from "lucide-react";
 
-import { useCallback, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { toastError } from "@/lib/toast";
-
-type UploadStatus =
-  | { kind: "idle" }
-  | { kind: "ready"; files: File[] }
-  | { kind: "error"; message: string };
-
-const ACCEPTED = new Set([
-  "text/csv",
-  "application/vnd.ms-excel", // some browsers label CSV as this
-  "application/json",
-  "",
-]);
-
-function validate(files: FileList | File[]): UploadStatus {
-  const list = Array.from(files);
-  if (list.length === 0) return { kind: "idle" };
-  for (const f of list) {
-    const name = f.name.toLowerCase();
-    const extOk = name.endsWith(".csv") || name.endsWith(".json");
-    const typeOk = ACCEPTED.has(f.type);
-    if (!extOk && !typeOk) {
-      return {
-        kind: "error",
-        message: `${f.name}: 対応していない形式です（.csv / .json のみ受け付けます）`,
-      };
-    }
-  }
-  return { kind: "ready", files: list };
+interface Feature {
+  href: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  testid: string;
 }
 
-export default function HomePage() {
-  const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [status, setStatus] = useState<UploadStatus>({ kind: "idle" });
-  const [isDragging, setIsDragging] = useState(false);
+const FEATURES: Feature[] = [
+  {
+    href: "/todo",
+    title: "ToDo 管理",
+    description:
+      "タスクの追加・編集・完了管理。フィルタや検索もでき、データはブラウザに保存されます。",
+    icon: CheckSquare,
+    testid: "nav-todo",
+  },
+  {
+    href: "/analysis",
+    title: "データ分析",
+    description:
+      "売上 Excel を取り込み、合計行を除いて sales_data へ格納します。",
+    icon: BarChart3,
+    testid: "nav-analysis",
+  },
+  {
+    href: "/health-voice",
+    title: "健康アシスタント（音声）",
+    description:
+      "OpenAI Realtime による音声健康アシスタント。WebRTC で低遅延に会話できます。",
+    icon: HeartPulse,
+    testid: "nav-health-voice",
+  },
+  {
+    href: "/chat",
+    title: "チャットボット",
+    description:
+      "OpenAI を使った対話型チャット。API キー未設定時はモック応答で動作確認できます。",
+    icon: Bot,
+    testid: "nav-chat",
+  },
+  {
+    href: "/rag",
+    title: "法令 RAG",
+    description:
+      "架空の規程を条単位で検索し、参照・準用を辿って根拠付きで回答します。AWS 本番前提の制度確認用です。",
+    icon: Scale,
+    testid: "nav-rag",
+  },
+  {
+    href: "/ai-samples",
+    title: "AI サンプル",
+    description:
+      "Google ADK を使った AI ワークフロー / エージェントの 2 つの実装パターン。",
+    icon: Sparkles,
+    testid: "nav-ai-samples",
+  },
+  {
+    href: "/profile",
+    title: "プロフィール",
+    description:
+      "自己紹介プロフィールページ。職業・趣味・スキルなどを掲載しています。",
+    icon: UserCircle,
+    testid: "nav-profile",
+  },
+];
 
-  const handleLoadSample = useCallback(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("trust-data-source", "sample");
-    }
-    router.push("/dashboard");
-  }, [router]);
-
-  const handleFiles = useCallback((files: FileList | File[]) => {
-    const next = validate(files);
-    setStatus(next);
-    if (next.kind === "error") {
-      toastError("対応していない形式です", next.message);
-    }
-  }, []);
-
-  const handleGoUpload = useCallback(() => {
-    if (status.kind !== "ready") return;
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "trust-data-source",
-        JSON.stringify({
-          kind: "upload",
-          fileNames: status.files.map((f) => f.name),
-        }),
-      );
-    }
-    router.push("/dashboard");
-  }, [router, status]);
-
-  const onDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setIsDragging(false);
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        handleFiles(e.dataTransfer.files);
-      }
-    },
-    [handleFiles],
-  );
-
+export default function Home() {
   return (
-    <main
-      className="flex min-h-screen items-center justify-center bg-trust-bg px-4 py-10"
-      data-testid="home-main"
-    >
-      <section className="w-full max-w-xl rounded-2xl bg-white p-8 shadow-[0_4px_24px_rgba(11,37,69,0.08)] ring-1 ring-slate-200 sm:p-10">
-        <header className="text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-trust-accent">
-            TrustReport
+    <main className="min-h-screen bg-[#ececec]">
+      <section className="bg-gradient-to-b from-[#bc0017] via-[#d30a1a] to-[#a80014] text-white">
+        <div className="mx-auto w-full max-w-5xl px-4 py-14 text-center sm:py-20">
+          <p className="text-sm font-medium tracking-[0.2em] text-[#f7dda8]">
+            Next.js + TypeScript + Tailwind CSS
           </p>
           <h1
-            className="mt-3 text-2xl font-bold leading-snug text-trust-primary sm:text-3xl"
-            data-testid="home-title"
+            className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl"
+            data-testid="app-title"
           >
-            信託期中管理レポート自動生成ツール
+            機能一覧
           </h1>
-          <p
-            className="mt-3 text-sm leading-relaxed text-trust-subtle sm:text-base"
-            data-testid="home-subtitle"
-          >
-            資産流動化案件（住宅ローン信託）のサービサー月次報告から、
-            <br className="hidden sm:inline" />
-            ダッシュボード・異常値検知・AI所見付きPDFレポートを自動生成します。
-          </p>
-        </header>
-
-        <div className="mt-8 flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={handleLoadSample}
-            className="inline-flex h-12 items-center justify-center rounded-lg bg-trust-primary px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#13315c] focus:outline-none focus-visible:ring-2 focus-visible:ring-trust-accent focus-visible:ring-offset-2"
-            data-testid="home-btn-load-sample"
-          >
-            サンプルデータで今すぐデモ
-          </button>
-          <p className="text-center text-xs text-trust-subtle">
-            SBIST-RMBS-2024-01 / 2026-03基準月のサンプル案件が読み込まれます
+          <p className="mx-auto mt-4 max-w-xl text-sm text-white/90 sm:text-base">
+            利用したい機能を選んでください。
           </p>
         </div>
+      </section>
 
-        <div className="my-8 flex items-center gap-3 text-xs text-trust-subtle">
-          <span className="h-px flex-1 bg-slate-200" aria-hidden />
-          <span>または自前のCSVをアップロード</span>
-          <span className="h-px flex-1 bg-slate-200" aria-hidden />
-        </div>
-
+      <section className="mx-auto w-full max-w-5xl px-4 py-10">
         <div
-          className={[
-            "rounded-xl border-2 border-dashed p-6 text-center transition-colors",
-            isDragging
-              ? "border-trust-accent bg-amber-50"
-              : status.kind === "error"
-                ? "border-trust-danger bg-red-50"
-                : "border-slate-300 bg-slate-50",
-          ].join(" ")}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={onDrop}
-          role="button"
-          tabIndex={0}
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              inputRef.current?.click();
-            }
-          }}
-          data-testid="home-upload-area"
-          data-state={status.kind}
+          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          data-testid="feature-grid"
         >
-          <p className="text-sm font-medium text-trust-ink">
-            ここにCSV / JSONをドラッグ＆ドロップ
-          </p>
-          <p className="mt-1 text-xs text-trust-subtle">
-            または クリックしてファイルを選択 (.csv / .json)
-          </p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".csv,.json,text/csv,application/json"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                handleFiles(e.target.files);
-              }
-            }}
-            data-testid="home-input-file"
-          />
-          {status.kind === "ready" && (
-            <p
-              className="mt-3 truncate text-xs font-medium text-trust-primary"
-              data-testid="home-upload-filename"
+          {FEATURES.map(({ href, title, description, icon: Icon, testid }) => (
+            <Link
+              key={href}
+              href={href}
+              data-testid={testid}
+              className="group flex flex-col rounded-2xl border border-black/5 bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bc0017]"
             >
-              選択中: {status.files.map((f) => f.name).join(", ")}
-            </p>
-          )}
-          {status.kind === "error" && (
-            <p
-              className="mt-3 text-xs font-medium text-trust-danger"
-              data-testid="home-upload-error"
-            >
-              {status.message}
-            </p>
-          )}
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#bc0017]/10 text-[#bc0017]">
+                <Icon className="h-6 w-6" aria-hidden />
+              </span>
+              <h2 className="mt-4 text-lg font-bold tracking-tight text-[#050505]">
+                {title}
+              </h2>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+              <span className="mt-4 inline-flex items-center text-sm font-semibold text-[#bc0017]">
+                開く
+                <span className="ml-1 transition group-hover:translate-x-1">→</span>
+              </span>
+            </Link>
+          ))}
         </div>
-
-        <button
-          type="button"
-          onClick={handleGoUpload}
-          disabled={status.kind !== "ready"}
-          className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg border border-trust-primary bg-white px-6 text-sm font-semibold text-trust-primary transition hover:bg-trust-primary hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-trust-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-white disabled:hover:text-slate-400"
-          data-testid="home-btn-go-dashboard"
-        >
-          アップロードしたデータでダッシュボードを開く
-        </button>
-
-        <footer className="mt-8 text-center text-[11px] leading-relaxed text-trust-subtle">
-          © SBI新生信託銀行 信託事業推進部 <br className="sm:hidden" />
-          本ツールは営業デモ用であり、実データは含まれません。
-        </footer>
       </section>
     </main>
   );

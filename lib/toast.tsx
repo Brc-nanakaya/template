@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * トースト通知ラッパー (T17)。
+ * トースト通知ラッパー。
  * Sonner の `toast.custom` を使って `data-testid="toast-error"` /
  * `data-testid="toast-success"` を持つ DOM を描画する。E2E からは
  * testid で個別に捕捉できる。

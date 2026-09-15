@@ -15,16 +15,6 @@ const config: Config = {
     },
     extend: {
       colors: {
-        trust: {
-          primary: "#0B2545",
-          accent: "#D4A017",
-          bg: "#F7F8FA",
-          ink: "#1F2937",
-          subtle: "#6B7280",
-          success: "#15803D",
-          warn: "#D97706",
-          danger: "#B91C1C",
-        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
