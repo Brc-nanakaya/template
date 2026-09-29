@@ -27,6 +27,8 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# public がリポジトリに無い場合でも、後段の COPY が失敗しないようにする
+RUN mkdir -p public
 
 # NEXT_PUBLIC_* はビルド時にバンドルへ焼き込まれるため、ここで受け取る必要がある。
 # 実行時の環境変数では変えられない点に注意
