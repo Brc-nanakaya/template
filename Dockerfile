@@ -69,8 +69,12 @@ COPY --chown=nextjs:nodejs drizzle ./drizzle
 USER nextjs
 EXPOSE 3000
 
+# App Runner は HOSTNAME をコンテナ名で上書きする。
+# Next.js はその値で待ち受けるため、ヘルスチェックが届かない。
+# 起動時に 0.0.0.0 を強制する。
+
 # DB に依存しない liveness を使う（DB 障害での再起動ループを避ける）
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "exec env HOSTNAME=0.0.0.0 node server.js"]

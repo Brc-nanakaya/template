@@ -1,0 +1,82 @@
+# main への push で ECR にイメージを送り、App Runner を再デプロイする。
+#
+# 初回だけ次を済ませる。
+# 1. GitHub OIDC プロバイダと、このリポジトリの main だけを信頼する IAM ロールを作る
+# 2. リポジトリシークレット AWS_ROLE_ARN にそのロールの ARN を入れる
+# 3. App Runner（brc-sales-hub）のイメージ識別子を <account>.dkr.ecr.ap-northeast-1.amazonaws.com/brc-sales-hub:main にする
+#    環境変数と DATABASE_URL のシークレット参照は残す
+#
+# スキーマ変更時のマイグレーションはここでは走らない。手順は docs/deployment-aws.md。
+
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-aws
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-northeast-1
+  ECR_REPOSITORY: brc-sales-hub
+  APP_RUNNER_SERVICE: brc-sales-hub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_DEMO_LOGIN_HINT=false \
+            --build-arg NEXT_PUBLIC_MOCK_LLM=false \
+            -t "$IMAGE:${{ github.sha }}" \
+            -t "$IMAGE:main" \
+            .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:main"
+
+      - name: Start App Runner deployment
+        run: |
+          ARN=$(aws apprunner list-services --region "$AWS_REGION" \
+            --query "ServiceSummaryList[?ServiceName=='$APP_RUNNER_SERVICE'].ServiceArn" \
+            --output text)
+          if [ -z "$ARN" ] || [ "$ARN" = "None" ]; then
+            echo "App Runner サービス $APP_RUNNER_SERVICE が見つかりません"
+            exit 1
+          fi
+          IDENTIFIER=$(aws apprunner describe-service --region "$AWS_REGION" \
+            --service-arn "$ARN" \
+            --query "Service.SourceConfiguration.ImageRepository.ImageIdentifier" \
+            --output text)
+          case "$IDENTIFIER" in
+            *:main) ;;
+            *)
+              echo "App Runner のイメージタグが main ではありません（今: $IDENTIFIER）"
+              echo "環境変数を消さないよう、既存の SourceConfiguration を保ったまま ImageIdentifier のタグだけ main に変えてください"
+              exit 1
+              ;;
+          esac
+          aws apprunner start-deployment --region "$AWS_REGION" --service-arn "$ARN"
