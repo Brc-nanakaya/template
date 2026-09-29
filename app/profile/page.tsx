@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "プロフィール | 研修用テンプレート",
+  title: "プロフィール | brc-sales-hub",
   description: "自己紹介プロフィールページ",
 };
 

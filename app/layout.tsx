@@ -14,7 +14,7 @@ const notoSansJP = Noto_Sans_JP({
 
 
 export const metadata: Metadata = {
-  title: "研修用テンプレート",
+  title: "brc-sales-hub",
   description: "Next.js + TypeScript + Tailwind CSS の研修用テンプレート",
 };
 

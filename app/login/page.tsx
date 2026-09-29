@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { getCurrentUser } from "@/lib/auth/server";
 
-export const metadata = { title: "ログイン | 研修用テンプレート" };
+export const metadata = { title: "ログイン | brc-sales-hub" };
 export const dynamic = "force-dynamic";
 
 interface Props {
