@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import * as XLSX from "xlsx";
 import path from "path";
-import { mkdtemp, writeFile } from "fs/promises";
+import { mkdtemp, readFile, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 
 async function createSalesExcel(): Promise<string> {
@@ -57,6 +57,9 @@ async function createSalesExcel(): Promise<string> {
 const E2E_DATASET_NAME = "E2E売上";
 
 test.describe("データ分析ページ", () => {
+  // 同じ DB のデータセット一覧を見るため、並列にすると後片付け・件数比較が干渉する
+  test.describe.configure({ mode: "default" });
+
   test.afterEach(async ({ request }) => {
     const res = await request.get("/api/analysis/datasets");
     if (!res.ok()) return;
@@ -98,5 +101,83 @@ test.describe("データ分析ページ", () => {
     await expect(page.getByTestId("stored-preview")).toBeVisible();
     await expect(page.getByTestId("stored-data-table")).toContainText("業務プロセス診断");
     await expect(page.getByTestId("stored-data-table")).not.toContainText("合計");
+
+    // 取り込み後はダッシュボードが新しいデータセットで更新される
+    await expect(page.getByTestId("sales-dashboard")).toBeVisible();
+    await expect(page.getByTestId("dashboard-dataset-name")).toHaveText(E2E_DATASET_NAME);
+    await expect(page.getByTestId("dashboard-updated-at")).toContainText("取込データで更新しました");
+    await expect(page.getByTestId("kpi-row-count")).toContainText("2 件");
+    await expect(page.getByTestId("dashboard-by-region")).toBeVisible();
+  });
+
+  test("全件入れ替えを選ぶと警告が出てボタンが切り替わる（保存はしない）", async ({ page }) => {
+    const filePath = await createSalesExcel();
+    await page.goto("/analysis");
+    await page.getByTestId("excel-file-input").setInputFiles(filePath);
+    await expect(page.getByTestId("save-to-db")).toHaveText("データベースに保存");
+
+    await page.getByTestId("save-mode-replace").check();
+    await expect(page.getByTestId("save-to-db")).toHaveText("全て入れ替えて保存");
+
+    // 確認ダイアログでキャンセルすると何も変わらない
+    const before = await page.request.get("/api/analysis/datasets").then((r) => r.json());
+    if (before.datasets.length > 0) {
+      await expect(page.getByTestId("replace-warning")).toBeVisible();
+      page.once("dialog", (d) => void d.dismiss());
+      await page.getByTestId("save-to-db").click();
+      await expect(page.getByTestId("excel-preview-section")).toBeVisible();
+      const after = await page.request.get("/api/analysis/datasets").then((r) => r.json());
+      expect(after.datasets.length).toBe(before.datasets.length);
+    }
+  });
+
+  test("API は不正な mode を 400 で拒否する", async ({ request }) => {
+    const res = await request.post("/api/analysis/datasets", {
+      multipart: {
+        file: { name: "x.csv", mimeType: "text/csv", buffer: Buffer.from("a,b\n1,2") },
+        mode: "drop",
+      },
+    });
+    expect(res.status()).toBe(400);
+  });
+
+  test("一般ユーザーは全件入れ替えできない（API は 403、画面に選択肢が出ない）", async ({
+    browser,
+    baseURL,
+  }) => {
+    // ログイン済み状態を引き継がない新しいコンテキストで一般ユーザーとしてログインする
+    const context = await browser.newContext({ storageState: undefined, baseURL });
+    try {
+      const login = await context.request.post("/api/auth/login", {
+        data: {
+          loginId: "sales1@example.com",
+          password: process.env.SEED_MEMBER_PASSWORD ?? "demo1234",
+        },
+      });
+      expect(login.ok()).toBeTruthy();
+
+      const filePath = await createSalesExcel();
+      const res = await context.request.post("/api/analysis/datasets", {
+        multipart: {
+          file: {
+            name: "sales.xlsx",
+            mimeType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            buffer: await readFile(filePath),
+          },
+          name: E2E_DATASET_NAME,
+          mode: "replace",
+        },
+      });
+      expect(res.status()).toBe(403);
+
+      const page = await context.newPage();
+      await page.goto("/analysis");
+      await page.getByTestId("excel-file-input").setInputFiles(filePath);
+      await expect(page.getByTestId("excel-preview-section")).toBeVisible();
+      await expect(page.getByTestId("save-mode-replace")).toHaveCount(0);
+    } finally {
+      await context.close();
+    }
   });
 });

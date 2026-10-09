@@ -27,7 +27,8 @@ export async function GET() {
 
 /**
  * Excel を取り込んでデータベースに保存する。
- * multipart/form-data: file (必須), name (任意)
+ * multipart/form-data: file (必須), name (任意),
+ *   mode (任意: "append" = 追加保存〔既定〕 / "replace" = 既存データを全て入れ替え〔管理者のみ〕)
  */
 export async function POST(req: Request) {
   const user = await getApiUser();
@@ -56,12 +57,29 @@ export async function POST(req: Request) {
       ? nameField.trim()
       : undefined;
 
+  const modeField = form.get("mode");
+  const mode = typeof modeField === "string" && modeField ? modeField : "append";
+  if (mode !== "append" && mode !== "replace") {
+    return NextResponse.json(
+      { error: "mode は append か replace を指定してください" },
+      { status: 400 },
+    );
+  }
+  // 全件入れ替えは他の利用者のデータも消すため管理者に限る
+  if (mode === "replace" && user.role !== "admin") {
+    return NextResponse.json(
+      { error: "既存データの入れ替えは管理者のみ実行できます" },
+      { status: 403 },
+    );
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
   const result = await importExcelToDatabase({
     fileName: file.name,
     buffer,
     name,
     createdBy: user.id,
+    replaceAll: mode === "replace",
   });
 
   if (!result.ok) {
@@ -72,7 +90,11 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(
-    { dataset: result.dataset, warnings: result.warnings },
+    {
+      dataset: result.dataset,
+      warnings: result.warnings,
+      replacedCount: result.replacedCount,
+    },
     { status: 201 },
   );
 }

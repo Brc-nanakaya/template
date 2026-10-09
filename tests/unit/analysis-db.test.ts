@@ -4,6 +4,7 @@ import {
   deleteDataset,
   getDataset,
   listDatasets,
+  replaceAllDatasets,
   saveDataset,
 } from "@/lib/analysis/db";
 import { closeDb } from "@/lib/db";
@@ -127,6 +128,64 @@ describe.runIf(process.env.DATABASE_URL)("analysis db (PostgreSQL)", () => {
     const missing = "00000000-0000-0000-0000-000000000000";
     expect(await deleteDataset(missing)).toBe(false);
     expect(await getDataset(missing)).toBeNull();
+  });
+
+  it("replaceAllDatasets は既存を全て消して 1 件だけにする（終了後に既存データは復元）", async () => {
+    if (!dbUp) return;
+    // 全件削除するテストなので、シード済みデータを退避して最後に戻す
+    const backups = await Promise.all(
+      (await listDatasets()).map((d) => getDataset(d.id)),
+    );
+    try {
+      await createFixture("__test__ 入れ替え前A");
+      await createFixture("__test__ 入れ替え前B");
+      const before = (await listDatasets()).length;
+
+      const { dataset, replacedCount } = await replaceAllDatasets({
+        name: "__test__ 入れ替え後",
+        fileName: "replace.xlsx",
+        parsed: sampleParsed,
+      });
+      created.push(dataset.id);
+
+      expect(replacedCount).toBe(before);
+      const after = await listDatasets();
+      expect(after.map((d) => d.id)).toEqual([dataset.id]);
+      expect((await getDataset(dataset.id))?.rows).toHaveLength(2);
+    } finally {
+      for (const b of backups.reverse()) {
+        if (!b) continue;
+        await saveDataset({
+          name: b.name,
+          fileName: b.fileName,
+          parsed: {
+            sheetName: b.sheetName,
+            columns: b.columns,
+            rows: b.rows.map((r) => r.values),
+            warnings: [],
+            skippedTotalRows: 0,
+          },
+        });
+      }
+    }
+  });
+
+  it("replaceAllDatasets は保存に失敗したら既存データを消さない", async () => {
+    if (!dbUp) return;
+    const existing = await createFixture("__test__ 失敗時に残る");
+    const before = (await listDatasets()).length;
+
+    await expect(
+      replaceAllDatasets({
+        name: "__test__ 失敗",
+        fileName: "broken.xlsx",
+        // sheet_name は NOT NULL のため INSERT が失敗する
+        parsed: { ...sampleParsed, sheetName: null as unknown as string },
+      }),
+    ).rejects.toThrow();
+
+    expect((await listDatasets()).length).toBe(before);
+    expect(await getDataset(existing.id)).not.toBeNull();
   });
 
   it("uuid 形式でない ID でも例外にならない", async () => {

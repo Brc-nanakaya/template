@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AnalysisDataset,
   AnalysisDatasetSummary,
@@ -12,9 +12,13 @@ interface UseAnalysisDatasetsResult {
   loading: boolean;
   saving: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<AnalysisDatasetSummary[]>;
   select: (id: string | null) => Promise<void>;
-  importFile: (file: File, name?: string) => Promise<AnalysisDatasetSummary>;
+  importFile: (
+    file: File,
+    name?: string,
+    options?: { replaceAll?: boolean },
+  ) => Promise<{ dataset: AnalysisDatasetSummary; replacedCount: number }>;
   remove: (id: string) => Promise<void>;
 }
 
@@ -36,28 +40,16 @@ export function useAnalysisDatasets(): UseAnalysisDatasetsResult {
     if (!res.ok) {
       throw new Error(body.detail || body.error || "一覧の取得に失敗しました");
     }
-    setDatasets(body.datasets ?? []);
+    const list = body.datasets ?? [];
+    setDatasets(list);
+    return list;
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        await refresh();
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "一覧の取得に失敗しました");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [refresh]);
+  /** 最後に要求した選択。遅れて返った古い応答で表示を上書きしないために使う */
+  const selectSeq = useRef(0);
 
   const select = useCallback(async (id: string | null) => {
+    const seq = ++selectSeq.current;
     if (!id) {
       setSelected(null);
       return;
@@ -72,17 +64,40 @@ export function useAnalysisDatasets(): UseAnalysisDatasetsResult {
     if (!res.ok) {
       throw new Error(body.detail || body.error || "詳細の取得に失敗しました");
     }
+    // 初回の自動選択が取り込み後の選択より遅れて返ることがあるため、最新の要求だけ反映する
+    if (seq !== selectSeq.current) return;
     setSelected(body.dataset ?? null);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await refresh();
+        // ダッシュボードを空にしないよう、最新のデータセットを初期表示する
+        if (!cancelled && list[0]) await select(list[0].id);
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "一覧の取得に失敗しました");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refresh, select]);
+
   const importFile = useCallback(
-    async (file: File, name?: string) => {
+    async (file: File, name?: string, options?: { replaceAll?: boolean }) => {
       setSaving(true);
       setError(null);
       try {
         const form = new FormData();
         form.append("file", file);
         if (name) form.append("name", name);
+        form.append("mode", options?.replaceAll ? "replace" : "append");
 
         const res = await fetch("/api/analysis/datasets", {
           method: "POST",
@@ -90,6 +105,7 @@ export function useAnalysisDatasets(): UseAnalysisDatasetsResult {
         });
         const body = (await res.json()) as {
           dataset?: AnalysisDatasetSummary;
+          replacedCount?: number;
           error?: string;
           detail?: string;
         };
@@ -101,7 +117,7 @@ export function useAnalysisDatasets(): UseAnalysisDatasetsResult {
 
         await refresh();
         await select(body.dataset.id);
-        return body.dataset;
+        return { dataset: body.dataset, replacedCount: body.replacedCount ?? 0 };
       } finally {
         setSaving(false);
       }
@@ -121,13 +137,17 @@ export function useAnalysisDatasets(): UseAnalysisDatasetsResult {
         if (!res.ok) {
           throw new Error(body.detail || body.error || "削除に失敗しました");
         }
-        if (selected?.id === id) setSelected(null);
-        await refresh();
+        const list = await refresh();
+        if (selected?.id === id) {
+          // 表示中を消したら、残りの最新データセットにダッシュボードを切り替える
+          setSelected(null);
+          if (list[0]) await select(list[0].id);
+        }
       } finally {
         setSaving(false);
       }
     },
-    [refresh, selected?.id],
+    [refresh, select, selected?.id],
   );
 
   return {

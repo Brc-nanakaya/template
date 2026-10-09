@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { datasetRows, datasets } from "@/lib/db/schema";
 import { SALES_TABLE_NAME } from "./schema";
@@ -105,58 +105,84 @@ export interface SaveDatasetInput {
   createdBy?: string | null;
 }
 
+type Tx = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
+
 /** パース済み Excel をデータベースに保存する */
 export async function saveDataset(
   input: SaveDatasetInput,
 ): Promise<AnalysisDataset> {
-  const values = input.parsed.rows as Record<string, CellValue>[];
-
   // ヘッダーと行を 1 トランザクションで書く（途中で失敗しても中途半端に残らない）
-  const dataset = await getDb().transaction(async (tx) => {
-    const inserted = await tx
-      .insert(datasets)
-      .values({
-        name: input.name.trim() || input.fileName,
-        fileName: input.fileName,
-        sheetName: input.parsed.sheetName,
-        tableName: SALES_TABLE_NAME,
-        columns: input.parsed.columns,
-        rowCount: values.length,
-        createdBy: input.createdBy ?? null,
-      })
-      .returning({
-        id: datasets.id,
-        name: datasets.name,
-        fileName: datasets.fileName,
-        sheetName: datasets.sheetName,
-        tableName: datasets.tableName,
-        columns: datasets.columns,
-        rowCount: datasets.rowCount,
-        createdAt: datasets.createdAt,
-      });
-
-    const head = inserted[0];
-    if (!head) throw new Error("データセットの作成に失敗しました");
-
-    const savedRows: { id: string; values: Record<string, CellValue> }[] = [];
-    for (let i = 0; i < values.length; i += ROW_INSERT_CHUNK) {
-      const chunk = values.slice(i, i + ROW_INSERT_CHUNK).map((v, j) => ({
-        datasetId: head.id,
-        rowIndex: i + j,
-        values: v,
-      }));
-      const returned = await tx
-        .insert(datasetRows)
-        .values(chunk)
-        .returning({ id: datasetRows.id, values: datasetRows.values });
-      savedRows.push(...returned);
-    }
-
-    return { ...toSummaryRow(head), rows: savedRows };
-  });
+  const dataset = await getDb().transaction((tx) => insertDataset(tx, input));
 
   // 保存後の形が想定どおりかを検証（UI / API が受け取る形の契約）
   return analysisDatasetSchema.parse(dataset);
+}
+
+/**
+ * 既存のデータセットを全て削除してから保存する（全件入れ替え）。
+ * 削除と保存は同じトランザクションなので、保存に失敗したら既存データは残る。
+ */
+export async function replaceAllDatasets(
+  input: SaveDatasetInput,
+): Promise<{ dataset: AnalysisDataset; replacedCount: number }> {
+  const result = await getDb().transaction(async (tx) => {
+    const [{ value: replacedCount }] = await tx
+      .select({ value: count() })
+      .from(datasets);
+    // dataset_rows は ON DELETE CASCADE で消える
+    await tx.delete(datasets);
+    const dataset = await insertDataset(tx, input);
+    return { dataset, replacedCount };
+  });
+
+  return {
+    dataset: analysisDatasetSchema.parse(result.dataset),
+    replacedCount: result.replacedCount,
+  };
+}
+
+async function insertDataset(tx: Tx, input: SaveDatasetInput) {
+  const values = input.parsed.rows as Record<string, CellValue>[];
+  const inserted = await tx
+    .insert(datasets)
+    .values({
+      name: input.name.trim() || input.fileName,
+      fileName: input.fileName,
+      sheetName: input.parsed.sheetName,
+      tableName: SALES_TABLE_NAME,
+      columns: input.parsed.columns,
+      rowCount: values.length,
+      createdBy: input.createdBy ?? null,
+    })
+    .returning({
+      id: datasets.id,
+      name: datasets.name,
+      fileName: datasets.fileName,
+      sheetName: datasets.sheetName,
+      tableName: datasets.tableName,
+      columns: datasets.columns,
+      rowCount: datasets.rowCount,
+      createdAt: datasets.createdAt,
+    });
+
+  const head = inserted[0];
+  if (!head) throw new Error("データセットの作成に失敗しました");
+
+  const savedRows: { id: string; values: Record<string, CellValue> }[] = [];
+  for (let i = 0; i < values.length; i += ROW_INSERT_CHUNK) {
+    const chunk = values.slice(i, i + ROW_INSERT_CHUNK).map((v, j) => ({
+      datasetId: head.id,
+      rowIndex: i + j,
+      values: v,
+    }));
+    const returned = await tx
+      .insert(datasetRows)
+      .values(chunk)
+      .returning({ id: datasetRows.id, values: datasetRows.values });
+    savedRows.push(...returned);
+  }
+
+  return { ...toSummaryRow(head), rows: savedRows };
 }
 
 /** データセットを削除する。dataset_rows は ON DELETE CASCADE で消える */

@@ -1,4 +1,4 @@
-import { saveDataset } from "./db";
+import { replaceAllDatasets, saveDataset } from "./db";
 import { isAcceptedExcelFileName, parseExcelBuffer } from "./excel";
 import type { AnalysisDatasetSummary } from "./types";
 import { toSummary } from "./types";
@@ -8,6 +8,8 @@ export type ImportResult =
       ok: true;
       dataset: AnalysisDatasetSummary;
       warnings: string[];
+      /** 全件入れ替えで削除した既存データセット数（追加保存のときは 0） */
+      replacedCount: number;
     }
   | {
       ok: false;
@@ -26,6 +28,8 @@ export async function importExcelToDatabase(input: {
   name?: string;
   /** 取り込んだユーザー ID（監査用・任意） */
   createdBy?: string | null;
+  /** true なら既存のデータセットを全て削除してから保存する */
+  replaceAll?: boolean;
 }): Promise<ImportResult> {
   if (!isAcceptedExcelFileName(input.fileName)) {
     return {
@@ -51,17 +55,21 @@ export async function importExcelToDatabase(input: {
     const name =
       input.name?.trim() || input.fileName.replace(/\.[^.]+$/, "");
 
-    const dataset = await saveDataset({
+    const saveInput = {
       name,
       fileName: input.fileName,
       parsed,
       createdBy: input.createdBy ?? null,
-    });
+    };
+    const { dataset, replacedCount } = input.replaceAll
+      ? await replaceAllDatasets(saveInput)
+      : { dataset: await saveDataset(saveInput), replacedCount: 0 };
 
     return {
       ok: true,
       dataset: toSummary(dataset),
       warnings: parsed.warnings,
+      replacedCount,
     };
   } catch (e) {
     return {
